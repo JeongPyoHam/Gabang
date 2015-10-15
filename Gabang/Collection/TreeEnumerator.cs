@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Gabang.Collection
 {
@@ -12,8 +9,6 @@ namespace Gabang.Collection
         private ITreeNode<T> _root;
         private Stack<IEnumerator<ITreeNode<T>>> _stack;
         private IEnumerator<ITreeNode<T>> _currentEnumerator;
-        private bool _isLeaf;
-        private bool _isRoot;
 
         /// <summary>
         /// Create new instance of TreeEnumerator
@@ -27,8 +22,6 @@ namespace Gabang.Collection
             }
             _root = root;
             _stack = new Stack<IEnumerator<ITreeNode<T>>>();
-            _isLeaf = false;
-            _isRoot = true;
             _currentEnumerator = new List<ITreeNode<T>>() { _root }.GetEnumerator();
         }
 
