@@ -40,6 +40,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="LoopList.cs" />
     <Compile Include="ObservableTreeNode.cs" />
     <Compile Include="ITreeNode.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
