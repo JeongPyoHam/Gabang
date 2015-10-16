@@ -10,6 +10,44 @@ namespace Gabang.Test
     [TestClass]
     public class ObservableTreeNodeTest
     {
+        private List<int> _linearized;
+        private ObservableTreeNode<int> _rootNode;
+
+        public TestContext TestContext { get; set; }
+
+        [TestInitialize]
+        public void InitializeTest()
+        {
+            bool canHaveChildren = true;
+            if (TestContext.Properties.Contains("CanHaveChildren"))
+            {
+                canHaveChildren = bool.Parse((string)TestContext.Properties["CanHaveChildren"]);
+            }
+
+            bool notifyIndexSelf = true;
+            if (TestContext.Properties.Contains("SelfInCollection"))
+            {
+                notifyIndexSelf = bool.Parse((string) TestContext.Properties["SelfInCollection"]);
+            }
+            _linearized = new List<int>();
+            _rootNode = new ObservableTreeNode<int>(0, canHaveChildren, notifyIndexSelf);
+            _rootNode.CollectionChanged += Target_CollectionChanged;
+
+            if (notifyIndexSelf)
+            {
+                _linearized.Add(_rootNode.Value);
+            }
+        }
+
+        [TestCleanup]
+        public void CleanupTest()
+        {
+            _rootNode.CollectionChanged -= Target_CollectionChanged;
+
+            _rootNode = null;
+            _linearized = null;
+        }
+
         [TestMethod]
         public void ObservableTreeNodeConstructorTest()
         {
@@ -23,127 +61,131 @@ namespace Gabang.Test
         [TestMethod]
         public void ObservableTreeNodeAddChildTest()
         {
-            RunLinearizeTest((target) =>
-            {
-                target.InsertChildAt(0, GetTestTree());
+            var target = _rootNode;
+            target.InsertChildAt(0, GetTestTree());
 
-                int[] expected = { 0, 1, 11, 111, 112, 12, 121, 122, 13, 131, 1311, 1312, 132 };
-                AssertLinearized(expected, _linearized, target);
-            });
+            int[] expected = { 0, 1, 11, 111, 112, 12, 121, 122, 13, 131, 1311, 1312, 132 };
+            AssertLinearized(expected, _linearized, target);
         }
 
         [TestMethod]
         public void ObservableTreeNodeRemoveChildTest()
         {
-            RunLinearizeTest((target) =>
-            {
-                target.InsertChildAt(0, GetTestTree());
+            var target = _rootNode;
+            target.InsertChildAt(0, GetTestTree());
 
-                target.Children[0].Children[2].RemoveChild(0);
+            target.Children[0].Children[2].RemoveChild(0);
 
-                int[] expected = { 0, 1, 11, 111, 112, 12, 121, 122, 13, 132 };
-                AssertLinearized(expected, _linearized, target);
-            });
+            int[] expected = { 0, 1, 11, 111, 112, 12, 121, 122, 13, 132 };
+            AssertLinearized(expected, _linearized, target);
         }
 
         [TestMethod]
         public void AddLeafChildTest()
         {
-            RunLinearizeTest((target) =>
-            {
-                target.AddChild(new ObservableTreeNode<int>(10));
-                target.AddChild(new ObservableTreeNode<int>(11));
-                target.AddChild(new ObservableTreeNode<int>(12));
+            var target = _rootNode;
+            target.AddChild(new ObservableTreeNode<int>(10));
+            target.AddChild(new ObservableTreeNode<int>(11));
+            target.AddChild(new ObservableTreeNode<int>(12));
 
-                int[] expected = { 0, 10, 11, 12 };
-                AssertLinearized(expected, _linearized, target);
-            });
+            int[] expected = { 0, 10, 11, 12 };
+            AssertLinearized(expected, _linearized, target);
         }
 
         [TestMethod]
         public void AddChildTest()
         {
-            RunLinearizeTest((target) =>
-            {
-                target.AddChild(new ObservableTreeNode<int>(10));
+            var target = _rootNode;
+            target.AddChild(new ObservableTreeNode<int>(10));
 
-                var added = new ObservableTreeNode<int>(11);
-                added.AddChild(new ObservableTreeNode<int>(111));
-                added.AddChild(new ObservableTreeNode<int>(112));
+            var added = new ObservableTreeNode<int>(11);
+            added.AddChild(new ObservableTreeNode<int>(111));
+            added.AddChild(new ObservableTreeNode<int>(112));
 
-                target.AddChild(added);
-                target.AddChild(new ObservableTreeNode<int>(12));
+            target.AddChild(added);
+            target.AddChild(new ObservableTreeNode<int>(12));
 
-                int[] expected = { 0, 10, 11, 111, 112, 12 };
+            int[] expected = { 0, 10, 11, 111, 112, 12 };
 
-                AssertLinearized(expected, _linearized, target);
-            });
+            AssertLinearized(expected, _linearized, target);
         }
 
         [TestMethod]
         public void InsertChildOrderTest()
         {
-            RunLinearizeTest((target) =>
-            {
-                target.InsertChildAt(0, new ObservableTreeNode<int>(12));
-                target.InsertChildAt(0, new ObservableTreeNode<int>(10));
-                target.InsertChildAt(1, new ObservableTreeNode<int>(11));
+            var target = _rootNode;
+            target.InsertChildAt(0, new ObservableTreeNode<int>(12));
+            target.InsertChildAt(0, new ObservableTreeNode<int>(10));
+            target.InsertChildAt(1, new ObservableTreeNode<int>(11));
 
-                int[] expected = { 0, 10, 11, 12 };
-                AssertLinearized(expected, _linearized, target);
-            });
+            int[] expected = { 0, 10, 11, 12 };
+            AssertLinearized(expected, _linearized, target);
         }
 
         [TestMethod]
         public void InsertAnoterTreeTest()
         {
-            RunLinearizeTest((target) =>
-            {
-                target.InsertChildAt(0, new ObservableTreeNode<int>(12));
+            var target = _rootNode;
+            target.InsertChildAt(0, new ObservableTreeNode<int>(12));
 
-                target.InsertChildAt(0, new ObservableTreeNode<int>(10));
+            target.InsertChildAt(0, new ObservableTreeNode<int>(10));
 
-                var added = new ObservableTreeNode<int>(11);
-                added.AddChild(new ObservableTreeNode<int>(111));
-                added.AddChild(new ObservableTreeNode<int>(112));
+            var added = new ObservableTreeNode<int>(11);
+            added.AddChild(new ObservableTreeNode<int>(111));
+            added.AddChild(new ObservableTreeNode<int>(112));
 
-                target.InsertChildAt(1, added);
+            target.InsertChildAt(1, added);
 
-                int[] expected = { 0, 10, 11, 111, 112, 12 };
-                AssertLinearized(expected, _linearized, target);
-            });
+            int[] expected = { 0, 10, 11, 111, 112, 12 };
+            AssertLinearized(expected, _linearized, target);
         }
 
         [TestMethod]
         public void InsertChildTest()
         {
-            RunLinearizeTest((target) =>
-            {
-                target.InsertChildAt(0, new ObservableTreeNode<int>(10));
-                target.InsertChildAt(1, new ObservableTreeNode<int>(11));
-                target.InsertChildAt(2, new ObservableTreeNode<int>(12));
+            var target = _rootNode;
+            target.InsertChildAt(0, new ObservableTreeNode<int>(10));
+            target.InsertChildAt(1, new ObservableTreeNode<int>(11));
+            target.InsertChildAt(2, new ObservableTreeNode<int>(12));
 
-                target.Children[1].InsertChildAt(0, new ObservableTreeNode<int>(111));
+            target.Children[1].InsertChildAt(0, new ObservableTreeNode<int>(111));
 
-                int[] expected = { 0, 10, 11, 111, 12 };
-                AssertLinearized(expected, _linearized, target);
-            });
+            int[] expected = { 0, 10, 11, 111, 12 };
+            AssertLinearized(expected, _linearized, target);
         }
 
         [TestMethod]
         public void RemoveLeafChildTest()
         {
-            RunLinearizeTest((target) =>
-            {
-                target.InsertChildAt(0, new ObservableTreeNode<int>(10));
-                target.InsertChildAt(1, new ObservableTreeNode<int>(11));
-                target.InsertChildAt(2, new ObservableTreeNode<int>(12));
+            var target = _rootNode;
+            target.InsertChildAt(0, new ObservableTreeNode<int>(10));
+            target.InsertChildAt(1, new ObservableTreeNode<int>(11));
+            target.InsertChildAt(2, new ObservableTreeNode<int>(12));
 
-                target.RemoveChild(1);
+            target.RemoveChild(1);
 
-                int[] expected = { 0, 10, 12 };
-                AssertLinearized(expected, _linearized, target);
-            });
+            int[] expected = { 0, 10, 12 };
+            AssertLinearized(expected, _linearized, target);
+        }
+
+        [TestMethod]
+        [TestProperty("SelfInCollection", "false")]
+        public void SelfInCollectionTest()
+        {
+            var target = _rootNode;
+
+            target.AddChild(new ObservableTreeNode<int>(10));
+            target.AddChild(new ObservableTreeNode<int>(20));
+            target.AddChild(new ObservableTreeNode<int>(30));
+
+            target.Children[0].AddChild(new ObservableTreeNode<int>(110));
+            target.Children[1].AddChild(new ObservableTreeNode<int>(120));
+            target.Children[1].AddChild(new ObservableTreeNode<int>(121));
+
+            target.Children[1].RemoveChild(0);
+
+            int[] expected = { 10, 110, 20, 121, 30 };
+            AssertLinearized(expected, _linearized, target);
         }
 
         private void AssertLinearized(int[] expected, IList<int> target, ObservableTreeNode<int> targetTree)
@@ -156,25 +198,6 @@ namespace Gabang.Test
             }
         }
 
-        private void RunLinearizeTest(Action<ObservableTreeNode<int>> testAction)
-        {
-            _linearized.Clear();
-            var target = new ObservableTreeNode<int>(0, true);
-            target.CollectionChanged += Target_CollectionChanged;
-
-            _linearized.Add(target.Value);
-
-            try
-            {
-                testAction(target);
-            }
-            finally
-            {
-                target.CollectionChanged -= Target_CollectionChanged;
-            }
-        }
-
-        private List<int> _linearized = new List<int>();
         private void Target_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             switch (e.Action)

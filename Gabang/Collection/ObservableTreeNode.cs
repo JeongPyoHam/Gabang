@@ -20,11 +20,16 @@ namespace GabangCollection
         /// </summary>
         /// <param name="nodeValue">Value for the node</param>
         /// <param name="canHaveChildren">flag used to mark leaf node or not</param>
-        public ObservableTreeNode(T nodeValue, bool canHaveChildren = true)
+        /// <param name="selfInCollection">flag to set collection notification index include self, Useful for root node</param>
+        public ObservableTreeNode(
+            T nodeValue,
+            bool canHaveChildren = true,
+            bool selfInCollection = true)
         {
             Value = nodeValue;
             CanHaveChildren = canHaveChildren;
-            TotalNodeCount = 1;
+            SelfInCollection = selfInCollection;
+            ResetTotalNodeCount();
 
             if (CanHaveChildren)
             {
@@ -40,6 +45,12 @@ namespace GabangCollection
         /// true for non-leaf node, false for leaf node
         /// </summary>
         public bool CanHaveChildren { get; }
+
+        /// <summary>
+        /// Flag that indicates if collection changed notificaiton index includes self
+        /// If true, child index starts at 1. If flase, child index starts at 0
+        /// </summary>
+        public bool SelfInCollection { get; }
 
         List<ObservableTreeNode<T>> _children;
         /// <summary>
@@ -127,7 +138,7 @@ namespace GabangCollection
             _children.RemoveAt(index);
 
             TotalNodeCount -= toBeRemoved.TotalNodeCount;
-            Debug.Assert(TotalNodeCount > 0);
+            Debug.Assert(TotalNodeCount >= (SelfInCollection ? 1 : 0));
 
             if (CollectionChanged != null)
             {
@@ -152,7 +163,7 @@ namespace GabangCollection
                 child.CollectionChanged -= Item_CollectionChanged;
             }
             _children.Clear();
-            TotalNodeCount = 1;
+            ResetTotalNodeCount();
 
             if (CollectionChanged != null)
             {
@@ -165,6 +176,11 @@ namespace GabangCollection
         #endregion
 
         #region private
+
+        private void ResetTotalNodeCount()
+        {
+            TotalNodeCount = SelfInCollection ? 1 : 0;
+        }
 
         private List<T> Linearize(ObservableTreeNode<T> tree)
         {
@@ -255,7 +271,7 @@ namespace GabangCollection
         /// <returns>number of total children nodes</returns>
         private int AddUpChildCount(int nodeIndex)
         {
-            int count = 1;
+            int count = SelfInCollection ? 1 : 0;
             for (int i = 0; i < nodeIndex; i++)
             {
                 count += _children[i].TotalNodeCount;

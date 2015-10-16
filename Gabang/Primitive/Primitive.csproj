@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{FA74ED98-3279-4215-A9E5-364615ACA6B2}</ProjectGuid>
+    <ProjectGuid>{801EE5F8-BE3E-4C57-BAD2-35D167813E29}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>GabangCollection</RootNamespace>
-    <AssemblyName>Gabang.Collection</AssemblyName>
+    <RootNamespace>Gabang.Primitive</RootNamespace>
+    <AssemblyName>Gabang.Primitive</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -40,13 +40,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Extensions.cs" />
-    <Compile Include="LoopList.cs" />
-    <Compile Include="ObservableTreeNode.cs" />
-    <Compile Include="ITreeNode.cs" />
+    <Compile Include="BindableBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TreeEnumerator.cs" />
-    <Compile Include="TreeToListCollection.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
