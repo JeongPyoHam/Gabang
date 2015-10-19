@@ -31,18 +31,18 @@ namespace TreeGridTest
             Populate();
         }
 
-        ObservableCollection<ObservableTreeNode<Variable>> _linearized = new ObservableCollection<ObservableTreeNode<Variable>>();
+        ObservableCollection<ObservableTreeNode> _linearized = new ObservableCollection<ObservableTreeNode>();
 
         void Populate()
         {
-            var tree = new ObservableTreeNode<Variable>(
+            var tree = new ObservableTreeNode(
                 new Variable() { VariableName = "1", VariableValue = "v1", TypeName = "t1", Sub = new SubVariable() { X = "sub1" }, });
             tree.CollectionChanged += Target_CollectionChanged;
 
             _linearized.Add(tree);
 
-            tree.AddChild(new ObservableTreeNode<Variable>(new Variable() { VariableName = "11", VariableValue = "v11", TypeName = "t11" , Sub = new SubVariable() { X = "sub11" }, }, false));
-            tree.AddChild(new ObservableTreeNode<Variable>(new Variable() { VariableName = "12", VariableValue = "v12", TypeName = "t12" , Sub = new SubVariable() { X = "sub12" }, }, false));
+            tree.AddChild(new ObservableTreeNode(new Variable() { VariableName = "11", VariableValue = "v11", TypeName = "t11" , Sub = new SubVariable() { X = "sub11" }, }, false));
+            tree.AddChild(new ObservableTreeNode(new Variable() { VariableName = "12", VariableValue = "v12", TypeName = "t12" , Sub = new SubVariable() { X = "sub12" }, }, false));
             
             this.varGrid.ItemsSource = _linearized;
         }
@@ -55,7 +55,7 @@ namespace TreeGridTest
                     int insertIndex = e.NewStartingIndex;
                     foreach (var item in e.NewItems)
                     {
-                        _linearized.Insert(insertIndex, (ObservableTreeNode<Variable>)item);
+                        _linearized.Insert(insertIndex, (ObservableTreeNode)item);
                         insertIndex++;
                     }
                     break;

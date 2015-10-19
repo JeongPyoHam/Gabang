@@ -18,7 +18,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <Rectangle Grid.Column="0"
-                           Width="{Binding Level, Converter={StaticResource MultiplicationConverter}, ConverterParameter=16.0}" />
+                           Width="{Binding Depth, Converter={StaticResource MultiplicationConverter}, ConverterParameter=16.0}" />
                 <ToggleButton x:Name="Expander"
                               Grid.Column="1"
                               ClickMode="Press" IsChecked="{Binding IsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">

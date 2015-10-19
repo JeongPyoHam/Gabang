@@ -9,7 +9,7 @@ namespace GabangCollection
 {
     public class TreeToListCollection<T>
     {
-        public ObservableTreeNode<T> TreeRoot { get; set; }
+        public ObservableTreeNode TreeRoot { get; set; }
 
         public IList<T> List { get; set; }
     }
