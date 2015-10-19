@@ -2,7 +2,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Windows;
 
 namespace GabangCollection
 {
@@ -11,12 +14,12 @@ namespace GabangCollection
     /// This node notifies collection change in linear order including children.
     /// </summary>
     /// <typeparam name="T">Value for tree node</typeparam>
-    public class ObservableTreeNode<T> : INotifyCollectionChanged
+    public class ObservableTreeNode<T> : INotifyPropertyChanged, INotifyCollectionChanged
     {
         #region factory
 
         /// <summary>
-        /// create new instance of <see cref="ObservableTreeNode{T}"/>
+        /// create new instance of <see cref="ObservableTreeNode{T}"/>, usually root node
         /// </summary>
         /// <param name="nodeValue">Value for the node</param>
         /// <param name="canHaveChildren">flag used to mark leaf node or not</param>
@@ -26,12 +29,13 @@ namespace GabangCollection
             bool canHaveChildren = true,
             bool selfInCollection = true)
         {
-            Value = nodeValue;
-            CanHaveChildren = canHaveChildren;
+            Parent = null;
+            Content = nodeValue;
+            HasChildren = canHaveChildren;
             SelfInCollection = selfInCollection;
             ResetTotalNodeCount();
 
-            if (CanHaveChildren)
+            if (HasChildren)
             {
                 _children = new List<ObservableTreeNode<T>>();
             }
@@ -41,16 +45,67 @@ namespace GabangCollection
 
         #region public
 
+        private bool _hasChildren;
         /// <summary>
         /// true for non-leaf node, false for leaf node
         /// </summary>
-        public bool CanHaveChildren { get; }
+        public bool HasChildren
+        {
+            get { return _hasChildren; }
+            set { SetProperty<bool>(ref _hasChildren, value); }
+        }
+
+        private bool _isExpanded = false;
+        /// <summary>
+        /// Indicate this node expand to show children
+        /// </summary>
+        public bool IsExpanded
+        {
+            get { return _isExpanded; }
+            set
+            {
+                SetProperty<bool>(ref _isExpanded, value);
+
+                foreach (var child in Children)
+                {
+                    SetChildVisibility(child);
+                }
+            }
+        }
+
+        private void SetChildVisibility(ObservableTreeNode<T> child)
+        {
+            Visibility childVisibility = _isExpanded ? Visibility.Visible : Visibility.Collapsed;
+
+            Traverse(child, (c) => c.Visibility = childVisibility);
+        }
+
+        private Visibility _visibility = Visibility.Visible;
+        public Visibility Visibility
+        {
+            get { return _visibility; }
+            set { SetProperty<Visibility>(ref _visibility, value); }
+        }
 
         /// <summary>
         /// Flag that indicates if collection changed notificaiton index includes self
         /// If true, child index starts at 1. If flase, child index starts at 0
         /// </summary>
         public bool SelfInCollection { get; }
+
+        public ObservableTreeNode<T> Parent { get; private set; }
+
+        public int Level
+        {
+            get
+            {
+                if (Parent == null)
+                {
+                    return 0;
+                }
+                return Parent.Level + 1;
+            }
+        }
 
         List<ObservableTreeNode<T>> _children;
         /// <summary>
@@ -69,15 +124,16 @@ namespace GabangCollection
         /// </summary>
         public int TotalNodeCount { get; private set; }
 
+        private T _content;
         /// <summary>
         ///  value  contained in this node
         /// </summary>
-        public T Value { get; }
+        public T Content
+        {
+            get { return _content; }
+            set { SetProperty<T>(ref _content, value); }
+        }
 
-        /// <summary>
-        /// notification for adding and removing child node
-        /// </summary>
-        public event NotifyCollectionChangedEventHandler CollectionChanged;
 
         /// <summary>
         /// Insert a direct child node at given position
@@ -86,10 +142,14 @@ namespace GabangCollection
         /// <param name="item">tree node</param>
         public void InsertChildAt(int index, ObservableTreeNode<T> item)
         {
-            if (!CanHaveChildren)
+            if (!HasChildren)
             {
                 throw new InvalidOperationException("This tree node can not have children");
             }
+
+            item.Parent = this;
+            SetChildVisibility(item);
+
 
             int addedStartingIndex = AddUpChildCount(index);
 
@@ -117,7 +177,7 @@ namespace GabangCollection
         /// <param name="item">a node to be added</param>
         public void AddChild(ObservableTreeNode<T> item)
         {
-            if (!CanHaveChildren)
+            if (!HasChildren)
             {
                 throw new InvalidOperationException("This tree node can not have children");
             }
@@ -175,6 +235,39 @@ namespace GabangCollection
 
         #endregion
 
+        #region INotifyCollectionChanged
+
+        /// <summary>
+        /// notification for adding and removing child node
+        /// </summary>
+        public event NotifyCollectionChangedEventHandler CollectionChanged;
+
+        #endregion
+
+        #region INotifyPropertyChanged
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected virtual bool SetProperty<U>(ref U storage, U value, [CallerMemberName] string propertyName = null)
+        {
+            if (object.Equals(storage, value)) return false;
+
+            storage = value;
+            this.OnPropertyChanged(propertyName);
+
+            return true;
+        }
+
+        protected void OnPropertyChanged(string propertyName)
+        {
+            var eventHandler = this.PropertyChanged;
+            if (eventHandler != null)
+            {
+                eventHandler(this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
+
+        #endregion
+
         #region private
 
         private void ResetTotalNodeCount()
@@ -182,19 +275,19 @@ namespace GabangCollection
             TotalNodeCount = SelfInCollection ? 1 : 0;
         }
 
-        private List<T> Linearize(ObservableTreeNode<T> tree)
+        private List<ObservableTreeNode<T>> Linearize(ObservableTreeNode<T> tree)
         {
-            var linear = new List<T>();
+            var linear = new List<ObservableTreeNode<T>>();
 
             Traverse(tree, (n) => linear.Add(n));
 
             return linear;
         }
 
-        private void Traverse(ObservableTreeNode<T> tree, Action<T> action)
+        private void Traverse(ObservableTreeNode<T> tree, Action<ObservableTreeNode<T>> action)
         {
-            action(tree.Value);
-            if (tree.CanHaveChildren && tree._children != null)
+            action(tree);
+            if (tree.HasChildren && tree._children != null)
             {
                 foreach (var child in tree._children)
                 {

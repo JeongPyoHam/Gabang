@@ -10,7 +10,7 @@ namespace Gabang.Test
     [TestClass]
     public class ObservableTreeNodeTest
     {
-        private List<int> _linearized;
+        private List<ObservableTreeNode<int>> _linearized;
         private ObservableTreeNode<int> _rootNode;
 
         public TestContext TestContext { get; set; }
@@ -29,13 +29,13 @@ namespace Gabang.Test
             {
                 notifyIndexSelf = bool.Parse((string) TestContext.Properties["SelfInCollection"]);
             }
-            _linearized = new List<int>();
+            _linearized = new List<ObservableTreeNode<int>>();
             _rootNode = new ObservableTreeNode<int>(0, canHaveChildren, notifyIndexSelf);
             _rootNode.CollectionChanged += Target_CollectionChanged;
 
             if (notifyIndexSelf)
             {
-                _linearized.Add(_rootNode.Value);
+                _linearized.Add(_rootNode);
             }
         }
 
@@ -52,8 +52,8 @@ namespace Gabang.Test
         public void ObservableTreeNodeConstructorTest()
         {
             var target = new ObservableTreeNode<int>(1234);
-            Assert.AreEqual(true, target.CanHaveChildren, "Default CanHaveChildren value");
-            Assert.AreEqual(1234, target.Value);
+            Assert.AreEqual(true, target.HasChildren, "Default CanHaveChildren value");
+            Assert.AreEqual(1234, target.Content);
             Assert.AreEqual(1, target.TotalNodeCount);
             Assert.AreEqual(0, target.Children.Count);
         }
@@ -188,13 +188,13 @@ namespace Gabang.Test
             AssertLinearized(expected, _linearized, target);
         }
 
-        private void AssertLinearized(int[] expected, IList<int> target, ObservableTreeNode<int> targetTree)
+        private void AssertLinearized(int[] expected, IList<ObservableTreeNode<int>> target, ObservableTreeNode<int> targetTree)
         {
             Assert.AreEqual(expected.Length, targetTree.TotalNodeCount);
             Assert.AreEqual(expected.Length, target.Count);
             for (int i = 0; i < expected.Length; i++)
             {
-                Assert.AreEqual(expected[i], target[i], string.Format("{0}th item is different", i));
+                Assert.AreEqual(expected[i], target[i].Content, string.Format("{0}th item is different", i));
             }
         }
 
@@ -206,7 +206,7 @@ namespace Gabang.Test
                     int insertIndex = e.NewStartingIndex;
                     foreach (var item in e.NewItems)
                     {
-                        _linearized.Insert(insertIndex, (int)item);
+                        _linearized.Insert(insertIndex, (ObservableTreeNode<int>)item);
                         insertIndex++;
                     }
                     break;
