@@ -43,26 +43,9 @@ namespace TreeGridTest
                     TypeName = "t1",
                     Sub = new SubVariable() { X = "sub1" }, },
                 CreateVariables);
-            tree.PropertyChanged += Node_PropertyChanged;
-            tree.CollectionChanged += Target_CollectionChanged;
 
-            _linearized.Add(tree);
-            foreach (var child in tree.Children)    // TODO: improve
-            {
-                _linearized.Add(child);
-            }
-
-            this.varGrid.ItemsSource = _linearized;
-        }
-
-        private bool Filter(object item)
-        {
-            var node = item as ObservableTreeNode;
-            if (node != null)
-            {
-                return node.Visibility == Visibility.Visible;
-            }
-            return false;
+            var collection = new TreeNodeCollection(tree);
+            varGrid.ItemsSource = collection.View;
         }
 
         Task<List<object>> CreateVariables(object parent)
@@ -94,52 +77,8 @@ namespace TreeGridTest
             return instances;
         }
 
-        private void Target_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-        {
-            switch (e.Action)
-            {
-                case NotifyCollectionChangedAction.Add:
-                    int insertIndex = e.NewStartingIndex;
-                    foreach (var item in e.NewItems)
-                    {
-                        var node = (ObservableTreeNode)item;
-                        node.PropertyChanged += Node_PropertyChanged;
-
-                        _linearized.Insert(insertIndex, node);
-                        insertIndex++;
-                    }
-                    break;
-                case NotifyCollectionChangedAction.Remove:
-                    for (int i = 0; i < e.OldItems.Count; i++)
-                    {
-                        _linearized[e.OldStartingIndex].PropertyChanged -= Node_PropertyChanged;
-                        _linearized.RemoveAt(e.OldStartingIndex);
-                    }
-                    break;
-                case NotifyCollectionChangedAction.Reset:
-                case NotifyCollectionChangedAction.Replace:
-                case NotifyCollectionChangedAction.Move:
-                default:
-                    throw new NotSupportedException();
-            }
-        }
-
-        private void Node_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == "IsExpanded")
-            {
-                RefreshView();
-            }
-        }
-
         private void RefreshButton_Click(object sender, RoutedEventArgs e)
         {
-            RefreshView();
-        }
-
-        private void RefreshView()
-        {
-            varGrid.Items.Filter = Filter;
         }
     }
 }

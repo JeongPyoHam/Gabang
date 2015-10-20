@@ -14,6 +14,7 @@ namespace Gabang.Controls
     {
         public TreeGrid()
         {
+            this.CanUserSortColumns = false;
         }
 
         public virtual BindingBase DepthBinding { get; set; }
