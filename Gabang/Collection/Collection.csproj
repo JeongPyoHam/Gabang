@@ -49,6 +49,7 @@
     <Compile Include="ObservableTreeNode.cs" />
     <Compile Include="ITreeNode.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TaskExtensions.cs" />
     <Compile Include="TreeEnumerator.cs" />
     <Compile Include="TreeNodeCollection.cs" />
   </ItemGroup>

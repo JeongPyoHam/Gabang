@@ -2,11 +2,32 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Threading;
+using System.Threading.Tasks;
 using GabangCollection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Gabang.Test
 {
+    public class TestNode : INode
+    {
+        public TestNode(int content)
+        {
+            this.Content = content;
+        }
+        public object Content { get; set; }
+
+        public Task<IList<INode>> GetChildrenAsync(CancellationToken cancellationToken)
+        {
+            return Task.FromResult<IList<INode>>(null);
+        }
+
+        public bool IsSame(INode node)
+        {
+            return ((int)Content) == ((int)node.Content);
+        }
+    }
+
     [TestClass]
     public class ObservableTreeNodeTest
     {
@@ -19,7 +40,7 @@ namespace Gabang.Test
         public void InitializeTest()
         {
             _linearized = new List<ObservableTreeNode>();
-            _rootNode = new ObservableTreeNode(0);
+            _rootNode = new ObservableTreeNode(new TestNode(0));
             _rootNode.CollectionChanged += Target_CollectionChanged;
 
             _linearized.Add(_rootNode);
@@ -37,10 +58,10 @@ namespace Gabang.Test
         [TestMethod]
         public void ObservableTreeNodeConstructorTest()
         {
-            var target = new ObservableTreeNode(1234);
+            var target = new ObservableTreeNode(new TestNode(1234));
             Assert.AreEqual(false, target.HasChildren, "Default HasChildren value");
             Assert.AreEqual(1234, target.Content);
-            Assert.AreEqual(1, target.TotalNodeCount);
+            Assert.AreEqual(1, target.Count);
             Assert.AreEqual(0, target.Children.Count);
         }
 
@@ -70,9 +91,9 @@ namespace Gabang.Test
         public void AddLeafChildTest()
         {
             var target = _rootNode;
-            target.AddChild(new ObservableTreeNode(10));
-            target.AddChild(new ObservableTreeNode(11));
-            target.AddChild(new ObservableTreeNode(12));
+            target.AddChild(new ObservableTreeNode(new TestNode(10)));
+            target.AddChild(new ObservableTreeNode(new TestNode(11)));
+            target.AddChild(new ObservableTreeNode(new TestNode(12)));
 
             int[] expected = { 0, 10, 11, 12 };
             AssertLinearized(expected, _linearized, target);
@@ -82,14 +103,14 @@ namespace Gabang.Test
         public void AddChildTest()
         {
             var target = _rootNode;
-            target.AddChild(new ObservableTreeNode(10));
+            target.AddChild(new ObservableTreeNode(new TestNode(10)));
 
-            var added = new ObservableTreeNode(11);
-            added.AddChild(new ObservableTreeNode(111));
-            added.AddChild(new ObservableTreeNode(112));
+            var added = new ObservableTreeNode(new TestNode(11));
+            added.AddChild(new ObservableTreeNode(new TestNode(111)));
+            added.AddChild(new ObservableTreeNode(new TestNode(112)));
 
             target.AddChild(added);
-            target.AddChild(new ObservableTreeNode(12));
+            target.AddChild(new ObservableTreeNode(new TestNode(12)));
 
             int[] expected = { 0, 10, 11, 111, 112, 12 };
 
@@ -100,9 +121,9 @@ namespace Gabang.Test
         public void InsertChildOrderTest()
         {
             var target = _rootNode;
-            target.InsertChildAt(0, new ObservableTreeNode(12));
-            target.InsertChildAt(0, new ObservableTreeNode(10));
-            target.InsertChildAt(1, new ObservableTreeNode(11));
+            target.InsertChildAt(0, new ObservableTreeNode(new TestNode(12)));
+            target.InsertChildAt(0, new ObservableTreeNode(new TestNode(10)));
+            target.InsertChildAt(1, new ObservableTreeNode(new TestNode(11)));
 
             int[] expected = { 0, 10, 11, 12 };
             AssertLinearized(expected, _linearized, target);
@@ -112,13 +133,13 @@ namespace Gabang.Test
         public void InsertAnoterTreeTest()
         {
             var target = _rootNode;
-            target.InsertChildAt(0, new ObservableTreeNode(12));
+            target.InsertChildAt(0, new ObservableTreeNode(new TestNode(12)));
 
-            target.InsertChildAt(0, new ObservableTreeNode(10));
+            target.InsertChildAt(0, new ObservableTreeNode(new TestNode(10)));
 
-            var added = new ObservableTreeNode(11);
-            added.AddChild(new ObservableTreeNode(111));
-            added.AddChild(new ObservableTreeNode(112));
+            var added = new ObservableTreeNode(new TestNode(11));
+            added.AddChild(new ObservableTreeNode(new TestNode(111)));
+            added.AddChild(new ObservableTreeNode(new TestNode(112)));
 
             target.InsertChildAt(1, added);
 
@@ -130,11 +151,11 @@ namespace Gabang.Test
         public void InsertChildTest()
         {
             var target = _rootNode;
-            target.InsertChildAt(0, new ObservableTreeNode(10));
-            target.InsertChildAt(1, new ObservableTreeNode(11));
-            target.InsertChildAt(2, new ObservableTreeNode(12));
+            target.InsertChildAt(0, new ObservableTreeNode(new TestNode(10)));
+            target.InsertChildAt(1, new ObservableTreeNode(new TestNode(11)));
+            target.InsertChildAt(2, new ObservableTreeNode(new TestNode(12)));
 
-            target.Children[1].InsertChildAt(0, new ObservableTreeNode(111));
+            target.Children[1].InsertChildAt(0, new ObservableTreeNode(new TestNode(111)));
 
             int[] expected = { 0, 10, 11, 111, 12 };
             AssertLinearized(expected, _linearized, target);
@@ -144,9 +165,9 @@ namespace Gabang.Test
         public void RemoveLeafChildTest()
         {
             var target = _rootNode;
-            target.InsertChildAt(0, new ObservableTreeNode(10));
-            target.InsertChildAt(1, new ObservableTreeNode(11));
-            target.InsertChildAt(2, new ObservableTreeNode(12));
+            target.InsertChildAt(0, new ObservableTreeNode(new TestNode(10)));
+            target.InsertChildAt(1, new ObservableTreeNode(new TestNode(11)));
+            target.InsertChildAt(2, new ObservableTreeNode(new TestNode(12)));
 
             target.RemoveChild(1);
 
@@ -156,7 +177,7 @@ namespace Gabang.Test
 
         private void AssertLinearized(int[] expected, IList<ObservableTreeNode> target, ObservableTreeNode targetTree)
         {
-            Assert.AreEqual(expected.Length, targetTree.TotalNodeCount);
+            Assert.AreEqual(expected.Length, targetTree.Count);
             Assert.AreEqual(expected.Length, target.Count);
             for (int i = 0; i < expected.Length; i++)
             {
@@ -192,31 +213,31 @@ namespace Gabang.Test
 
         private ObservableTreeNode GetTestTree()
         {
-            var n1 = new ObservableTreeNode(11);
-            var n11 = new ObservableTreeNode(111);
-            var n12 = new ObservableTreeNode(112);
+            var n1 = new ObservableTreeNode(new TestNode(11));
+            var n11 = new ObservableTreeNode(new TestNode(111));
+            var n12 = new ObservableTreeNode(new TestNode(112));
             n1.InsertChildAt(0, n11);
             n1.InsertChildAt(1, n12);
 
-            var n2 = new ObservableTreeNode(12);
-            var n21 = new ObservableTreeNode(121);
-            var n22 = new ObservableTreeNode(122);
+            var n2 = new ObservableTreeNode(new TestNode(12));
+            var n21 = new ObservableTreeNode(new TestNode(121));
+            var n22 = new ObservableTreeNode(new TestNode(122));
             n2.InsertChildAt(0, n21);
             n2.InsertChildAt(1, n22);
 
-            var n3 = new ObservableTreeNode(13);
+            var n3 = new ObservableTreeNode(new TestNode(13));
 
-            var n311 = new ObservableTreeNode(1311);
-            var n312 = new ObservableTreeNode(1312);
-            var n31 = new ObservableTreeNode(131);
+            var n311 = new ObservableTreeNode(new TestNode(1311));
+            var n312 = new ObservableTreeNode(new TestNode(1312));
+            var n31 = new ObservableTreeNode(new TestNode(131));
             n31.InsertChildAt(0, n311);
             n31.InsertChildAt(1, n312);
 
-            var n32 = new ObservableTreeNode(132);
+            var n32 = new ObservableTreeNode(new TestNode(132));
             n3.InsertChildAt(0, n31);
             n3.InsertChildAt(1, n32);
 
-            var n = new ObservableTreeNode(1);
+            var n = new ObservableTreeNode(new TestNode(1));
             n.InsertChildAt(0, n1);
             n.InsertChildAt(1, n2);
             n.InsertChildAt(2, n3);

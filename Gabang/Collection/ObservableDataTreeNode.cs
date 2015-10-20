@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -11,15 +12,19 @@ namespace GabangCollection
     [Flags]
     public enum DataTreeNodeState
     {
-        InvalidData     = 0x0,
+        Invalid         = 0x0,
         ValidData       = 0x1,
         ValidChildren   = 0x2,
-        ValidError      = 0x8,
+        Error           = 0x8,
     }
 
-    public interface IObservableDataTreeNodeFactory
+    public interface INode
     {
-        Task RefreshTreeNodes(ObservableDataTreeNode parent, IList<ObservableDataTreeNode> oldChildren);
+        object Content { get; set; }
+
+        bool IsSame(INode node);
+
+        Task<IList<INode>> GetChildrenAsync(CancellationToken cancellationToken);
     }
 
     public class ObservableDataTreeNode : ObservableTreeNode
@@ -29,7 +34,7 @@ namespace GabangCollection
         private ObservableDataTreeNode(
             object nodeValue,
             DataTreeNodeState initialState)
-            : base(nodeValue)
+            : base(null)
         {
             _state = initialState;
 
@@ -50,20 +55,15 @@ namespace GabangCollection
             set { SetProperty(ref _statusVisibility, value); }
         }
 
-        //public object Status
-        //{
-        //    get { return "...."; }
-        //}
-
         public void Invalidate()
         {
-            State &= ~DataTreeNodeState.ValidData;
+            State = DataTreeNodeState.Invalid;
 
             foreach (var child in Children)
             {
                 Traverse(
                     child,
-                    (c) => ((ObservableDataTreeNode)c).State &= ~DataTreeNodeState.ValidData);
+                    (c) => ((ObservableDataTreeNode)c).State = DataTreeNodeState.Invalid);
             }
         }
 
@@ -79,8 +79,6 @@ namespace GabangCollection
         {
             var newNode = new ObservableDataTreeNode(nodeValue, DataTreeNodeState.ValidData);
             newNode.HasChildren = true;
-            //newNode.AddChild(new ObservableDataTreeNode(null, DataTreeNodeState.InvalidData));
-
             newNode.queryChildren = query;
 
             return newNode;
@@ -95,7 +93,7 @@ namespace GabangCollection
 
             if (queryChildren == null)
             {
-                node.State = DataTreeNodeState.ValidError;
+                node.State = DataTreeNodeState.Error;
                 return;
             }
 
@@ -117,7 +115,7 @@ namespace GabangCollection
             }
             catch
             {
-                node.State = DataTreeNodeState.ValidError;
+                node.State = DataTreeNodeState.Error;
             }
         }
     }

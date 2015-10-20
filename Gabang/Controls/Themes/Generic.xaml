@@ -1,7 +1,8 @@
 ﻿
     <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:local="clr-namespace:Gabang.Controls">
+                    xmlns:local="clr-namespace:Gabang.Controls"
+                    xmlns:core="clr-namespace:System;assembly=mscorlib">
 
     <local:MultiplicationConverter x:Key="MultiplicationConverter" />
     <local:BooleanToVisibilityConverter x:Key="HidingBoolToVisibilityConverter" ValueForTrue="Visible" ValueForFalse="Hidden" />
@@ -17,7 +18,7 @@
                     <Border Background="Transparent" Height="16" Padding="5" Width="16">
                         <Path x:Name="ExpandPath" Data="M0,0 L0,6 L6,0 z" Fill="White" Stroke="#FF818181">
                             <Path.RenderTransform>
-                                <RotateTransform Angle="135" CenterY="3" CenterX="3"/>
+                                <RotateTransform Angle="{StaticResource ExpanderToggleAngle}" CenterY="3" CenterX="3"/>
                             </Path.RenderTransform>
                         </Path>
                     </Border>
@@ -112,7 +113,8 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Rectangle x:Name="Indentation" Grid.Column="0"
-                                   Width="{Binding Depth, Converter={StaticResource MultiplicationConverter}, ConverterParameter=16.0}" /> <!-- TODO: Do not hardcode 16.0 -->
+                                   Width="{Binding Depth, Converter={StaticResource MultiplicationConverter}, ConverterParameter=16.0}" />
+                        <!-- TODO: Do not hardcode 16.0 -->
                         <ToggleButton x:Name="Expander"
                               Grid.Column="1"
                               Style="{StaticResource ExpanderToggleStyle}"

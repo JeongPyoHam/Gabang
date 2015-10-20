@@ -5,6 +5,8 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 
 namespace GabangCollection
@@ -20,12 +22,19 @@ namespace GabangCollection
         /// <summary>
         /// create new instance of <see cref="ObservableTreeNode"/>, usually root node
         /// </summary>
-        /// <param name="nodeValue">Value for the node</param>
-        public ObservableTreeNode(object nodeValue)
+        /// <param name="node">Model for this node</param>
+        public ObservableTreeNode(INode node, bool startUpdatingChildren = false)
         {
+            ResetCount();
+
             Parent = null;
-            Content = nodeValue;
-            ResetTotalNodeCount();
+            Content = node.Content;
+            Model = node;
+
+            if (startUpdatingChildren)
+            {
+                StartUpdatingChildren().DoNotWait();
+            }
         }
 
         #endregion
@@ -58,10 +67,19 @@ namespace GabangCollection
                 }
 
                 SetProperty<bool>(ref _isExpanded, value);
+
+                if (_isExpanded)
+                {
+                    // TODO: more intelligently when huge number of children
+                    foreach (var child in ChildrenInternal)
+                    {
+                        child.StartUpdatingChildren().DoNotWait();
+                    }
+                }
             }
         }
 
-        private Visibility _visibility = Visibility.Visible;
+        private Visibility _visibility = Visibility.Collapsed;
         /// <summary>
         /// Visibility of this node
         /// </summary>
@@ -115,7 +133,7 @@ namespace GabangCollection
         /// <summary>
         /// the number of node including all children and itself
         /// </summary>
-        public int TotalNodeCount { get; private set; }
+        public int Count { get; private set; }
 
         private object _content;
         /// <summary>
@@ -125,6 +143,16 @@ namespace GabangCollection
         {
             get { return _content; }
             set { SetProperty<object>(ref _content, value); }
+        }
+
+        private object _errorContent;
+        /// <summary>
+        /// Content when any error happens internally
+        /// </summary>
+        public object ErrorContent
+        {
+            get { return _errorContent; }
+            set { SetProperty(ref _errorContent, value); }
         }
 
         /// <summary>
@@ -144,7 +172,7 @@ namespace GabangCollection
 
             item.CollectionChanged += Item_CollectionChanged;
 
-            TotalNodeCount += item.TotalNodeCount;
+            Count += item.Count;
 
             if (CollectionChanged != null)
             {
@@ -187,8 +215,8 @@ namespace GabangCollection
 
             SetHasChildren();
 
-            TotalNodeCount -= toBeRemoved.TotalNodeCount;
-            Debug.Assert(TotalNodeCount >= 1);
+            Count -= toBeRemoved.Count;
+            Debug.Assert(Count >= 1);
 
             if (CollectionChanged != null)
             {
@@ -219,7 +247,7 @@ namespace GabangCollection
             ChildrenInternal.Clear();
             SetHasChildren();
 
-            ResetTotalNodeCount();
+            ResetCount();
 
             if (CollectionChanged != null)
             {
@@ -269,9 +297,20 @@ namespace GabangCollection
 
         #region private
 
-        private void ResetTotalNodeCount()
+        private INode _model;
+        private INode Model
         {
-            TotalNodeCount = 1;
+            get { return _model; }
+            set
+            {
+                _model = value;
+                Content = _model == null ? null : _model.Content;
+            }
+        }
+
+        private void ResetCount()
+        {
+            Count = 1;
         }
 
         private List<ObservableTreeNode> Linearize(ObservableTreeNode tree)
@@ -305,7 +344,7 @@ namespace GabangCollection
             {
                 foreach (var child in tree.Children)
                 {
-                    Traverse(child, action);
+                    Traverse(child, action, parentPredicate);
                 }
             }
         }
@@ -326,7 +365,7 @@ namespace GabangCollection
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Add:
-                    TotalNodeCount += e.NewItems.Count;
+                    Count += e.NewItems.Count;
                     if (CollectionChanged != null)
                     {
                         int nodeStartIndex = AddUpChildCount(nodeIndex);
@@ -339,7 +378,7 @@ namespace GabangCollection
                     }
                     break;
                 case NotifyCollectionChangedAction.Remove:
-                    TotalNodeCount -= e.OldItems.Count;
+                    Count -= e.OldItems.Count;
                     if (CollectionChanged != null)
                     {
                         int nodeStartIndex = AddUpChildCount(nodeIndex);
@@ -353,7 +392,7 @@ namespace GabangCollection
                     break;
                 case NotifyCollectionChangedAction.Reset:
                     var deleted = Linearize(node);
-                    TotalNodeCount -= deleted.Count;
+                    Count -= deleted.Count;
                     if (CollectionChanged != null)
                     {
                         CollectionChanged(
@@ -381,7 +420,7 @@ namespace GabangCollection
             int count = 1;
             for (int i = 0; i < nodeIndex; i++)
             {
-                count += Children[i].TotalNodeCount;
+                count += Children[i].Count;
             }
             return count;
         }
@@ -405,6 +444,82 @@ namespace GabangCollection
             else
             {
                 HasChildren = false;
+            }
+        }
+
+        private async Task StartUpdatingChildren()
+        {
+            if (Model == null)
+            {
+                return;
+            }
+
+            try
+            {
+                var nodes = await Model.GetChildrenAsync(CancellationToken.None);
+
+                if (nodes != null)
+                {
+                    UpdateChildren(nodes);
+                }
+            }
+            catch (Exception e)
+            {
+                SetStatus("Errot at enumerating members", e);   // TODO: move to resource, or bypass the exception message
+            }
+        }
+
+        private void SetStatus(string message, Exception e)
+        {
+            ErrorContent = new Exception(message, e);
+        }
+
+        private void UpdateChildren(IList<INode> update)
+        {
+            int srcIndex = 0;
+            int updateIndex = 0;
+
+            while (srcIndex < ChildrenInternal.Count)
+            {
+                int sameUpdateIndex = -1;
+                for (int u = updateIndex; u < update.Count; u++)
+                {
+                    if (ChildrenInternal[srcIndex].Model.IsSame(update[u]))
+                    {
+                        sameUpdateIndex = u;
+                        break;
+                    }
+                }
+
+                if (sameUpdateIndex != -1)
+                {
+                    int insertIndex = srcIndex;
+                    for (int i = updateIndex; i < sameUpdateIndex; i++)
+                    {
+                        InsertChildAt(insertIndex++, new ObservableTreeNode(update[i]));
+                        srcIndex++;
+                    }
+
+                    ChildrenInternal[srcIndex].Model = update[sameUpdateIndex];
+                    srcIndex++;
+
+                    updateIndex = sameUpdateIndex + 1;
+                }
+                else
+                {
+                    RemoveChild(srcIndex);
+                }
+            }
+
+            if (updateIndex < update.Count)
+            {
+                Debug.Assert(srcIndex == ChildrenInternal.Count);
+
+                int insertIndex = srcIndex;
+                for (int i = updateIndex; i < update.Count; i++)
+                {
+                    InsertChildAt(insertIndex++, new ObservableTreeNode(update[i]));
+                }
             }
         }
 

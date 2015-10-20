@@ -100,16 +100,6 @@ namespace GabangCollection
             }
         }
 
-        private bool Filter(object item)
-        {
-            var node = item as ObservableTreeNode;
-            if (node != null)
-            {
-                return node.Visibility == Visibility.Visible;
-            }
-            return false;
-        }
-
         private void Node_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             if (e.PropertyName == "IsExpanded")
