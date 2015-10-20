@@ -18,19 +18,11 @@ namespace Gabang.Test
         [TestInitialize]
         public void InitializeTest()
         {
-            bool notifyIndexSelf = true;
-            if (TestContext.Properties.Contains("SelfInCollection"))
-            {
-                notifyIndexSelf = bool.Parse((string) TestContext.Properties["SelfInCollection"]);
-            }
             _linearized = new List<ObservableTreeNode>();
-            _rootNode = new ObservableTreeNode(0, notifyIndexSelf);
+            _rootNode = new ObservableTreeNode(0);
             _rootNode.CollectionChanged += Target_CollectionChanged;
 
-            if (notifyIndexSelf)
-            {
-                _linearized.Add(_rootNode);
-            }
+            _linearized.Add(_rootNode);
         }
 
         [TestCleanup]
@@ -162,26 +154,6 @@ namespace Gabang.Test
             AssertLinearized(expected, _linearized, target);
         }
 
-        [TestMethod]
-        [TestProperty("SelfInCollection", "false")]
-        public void SelfInCollectionTest()
-        {
-            var target = _rootNode;
-
-            target.AddChild(new ObservableTreeNode(10));
-            target.AddChild(new ObservableTreeNode(20));
-            target.AddChild(new ObservableTreeNode(30));
-
-            target.Children[0].AddChild(new ObservableTreeNode(110));
-            target.Children[1].AddChild(new ObservableTreeNode(120));
-            target.Children[1].AddChild(new ObservableTreeNode(121));
-
-            target.Children[1].RemoveChild(0);
-
-            int[] expected = { 10, 110, 20, 121, 30 };
-            AssertLinearized(expected, _linearized, target);
-        }
-
         private void AssertLinearized(int[] expected, IList<ObservableTreeNode> target, ObservableTreeNode targetTree)
         {
             Assert.AreEqual(expected.Length, targetTree.TotalNodeCount);
@@ -221,26 +193,26 @@ namespace Gabang.Test
         private ObservableTreeNode GetTestTree()
         {
             var n1 = new ObservableTreeNode(11);
-            var n11 = new ObservableTreeNode(111, false);
-            var n12 = new ObservableTreeNode(112, false);
+            var n11 = new ObservableTreeNode(111);
+            var n12 = new ObservableTreeNode(112);
             n1.InsertChildAt(0, n11);
             n1.InsertChildAt(1, n12);
 
             var n2 = new ObservableTreeNode(12);
-            var n21 = new ObservableTreeNode(121, false);
-            var n22 = new ObservableTreeNode(122, false);
+            var n21 = new ObservableTreeNode(121);
+            var n22 = new ObservableTreeNode(122);
             n2.InsertChildAt(0, n21);
             n2.InsertChildAt(1, n22);
 
             var n3 = new ObservableTreeNode(13);
 
-            var n311 = new ObservableTreeNode(1311, false);
-            var n312 = new ObservableTreeNode(1312, false);
-            var n31 = new ObservableTreeNode(131, true);
+            var n311 = new ObservableTreeNode(1311);
+            var n312 = new ObservableTreeNode(1312);
+            var n31 = new ObservableTreeNode(131);
             n31.InsertChildAt(0, n311);
             n31.InsertChildAt(1, n312);
 
-            var n32 = new ObservableTreeNode(132, false);
+            var n32 = new ObservableTreeNode(132);
             n3.InsertChildAt(0, n31);
             n3.InsertChildAt(1, n32);
 

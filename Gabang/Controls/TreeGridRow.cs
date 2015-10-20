@@ -6,22 +6,19 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
+using System.Windows.Controls.Primitives;
 
 namespace Gabang.Controls
 {
-    public class TreeGrid : DataGrid
+    public class TreeGridRow : DataGridRow
     {
-        public TreeGrid()
+        static TreeGridRow()
         {
+            DefaultStyleKeyProperty.OverrideMetadata(typeof(TreeGridRow), new FrameworkPropertyMetadata(typeof(TreeGridRow)));
         }
 
-        public virtual BindingBase DepthBinding { get; set; }
-
-        protected override DependencyObject GetContainerForItemOverride()
+        public TreeGridRow()
         {
-            return new TreeGridRow();
         }
     }
-
 }

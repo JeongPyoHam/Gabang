@@ -1,0 +1,130 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:Gabang.Controls">
+
+    <local:MultiplicationConverter x:Key="MultiplicationConverter" />
+    <local:BooleanToVisibilityConverter x:Key="HidingBoolToVisibilityConverter" ValueForTrue="Visible" ValueForFalse="Hidden" />
+
+    <Style x:Key="{x:Type local:TreeGridRow}" TargetType="{x:Type local:TreeGridRow}"  >
+        <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"/>
+        <Setter Property="SnapsToDevicePixels" Value="true"/>
+        <Setter Property="Validation.ErrorTemplate" Value="{x:Null}"/>
+        <Setter Property="ValidationErrorTemplate">
+            <Setter.Value>
+                <ControlTemplate>
+                    <TextBlock Foreground="Red" Margin="2,0,0,0" Text="!" VerticalAlignment="Center"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type local:TreeGridRow}">
+                    <Border x:Name="TGR_Border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                        <SelectiveScrollingGrid>
+                            <SelectiveScrollingGrid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </SelectiveScrollingGrid.ColumnDefinitions>
+                            <SelectiveScrollingGrid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </SelectiveScrollingGrid.RowDefinitions>
+                            <DataGridCellsPresenter Grid.Column="1"
+                                                        ItemsPanel="{TemplateBinding ItemsPanel}"
+                                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                            <DataGridDetailsPresenter Grid.Column="1"
+                                                      Grid.Row="1"
+                                                      SelectiveScrollingGrid.SelectiveScrollingOrientation="{Binding AreRowDetailsFrozen,
+                                                          ConverterParameter={x:Static SelectiveScrollingOrientation.Vertical},
+                                                          Converter={x:Static DataGrid.RowDetailsScrollingConverter},
+                                                          RelativeSource={RelativeSource AncestorType={x:Type local:TreeGrid}}}"
+                                                      Visibility="{TemplateBinding DetailsVisibility}"/>
+                            <DataGridRowHeader Grid.RowSpan="2"
+                                               SelectiveScrollingGrid.SelectiveScrollingOrientation="Vertical"
+                                               Visibility="{Binding HeadersVisibility,
+                                                   ConverterParameter={x:Static DataGridHeadersVisibility.Row},
+                                                   Converter={x:Static DataGrid.HeadersVisibilityConverter},
+                                                   RelativeSource={RelativeSource AncestorType={x:Type local:TreeGrid}}}"/>
+                        </SelectiveScrollingGrid>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsNewItem" Value="True">
+                <Setter Property="Margin" Value="{Binding NewItemMargin, RelativeSource={RelativeSource AncestorType={x:Type local:TreeGrid}}}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="{x:Type local:TreeGridExpanderPresenter}" TargetType="{x:Type local:TreeGridExpanderPresenter}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type local:TreeGridExpanderPresenter}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Rectangle x:Name="Indentation" Grid.Column="0"
+                           Width="{Binding Depth, 
+                                Converter={StaticResource MultiplicationConverter}, ConverterParameter=16.0}" /> <!-- TODO: Do not hardcode 16.0 -->
+                        <ToggleButton x:Name="Expander"
+                              Grid.Column="1"
+                              ClickMode="Press" IsChecked="{Binding IsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                            <ToggleButton.Style>
+                                <Style TargetType="{x:Type ToggleButton}">
+                                    <Setter Property="Focusable" Value="False"/>
+                                    <Setter Property="Width" Value="16"/>
+                                    <Setter Property="Height" Value="16"/>
+                                    <Setter Property="Visibility" Value="{Binding HasChildren, Converter={StaticResource HidingBoolToVisibilityConverter}}" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type ToggleButton}">
+                                                <Border Background="Transparent" Height="16" Padding="5" Width="16">
+                                                    <Path x:Name="ExpandPath" Data="M0,0 L0,6 L6,0 z" Fill="White" Stroke="#FF818181">
+                                                        <Path.RenderTransform>
+                                                            <RotateTransform Angle="135" CenterY="3" CenterX="3"/>
+                                                        </Path.RenderTransform>
+                                                    </Path>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsChecked" Value="True">
+                                                        <Setter Property="RenderTransform" TargetName="ExpandPath">
+                                                            <Setter.Value>
+                                                                <RotateTransform Angle="180" CenterY="3" CenterX="3"/>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                        <Setter Property="Fill" TargetName="ExpandPath" Value="#FF595959"/>
+                                                        <Setter Property="Stroke" TargetName="ExpandPath" Value="#FF262626"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Stroke" TargetName="ExpandPath" Value="#FF27C7F7"/>
+                                                        <Setter Property="Fill" TargetName="ExpandPath" Value="#FFCCEEFB"/>
+                                                    </Trigger>
+                                                    <MultiTrigger>
+                                                        <MultiTrigger.Conditions>
+                                                            <Condition Property="IsMouseOver" Value="True"/>
+                                                            <Condition Property="IsChecked" Value="True"/>
+                                                        </MultiTrigger.Conditions>
+                                                        <Setter Property="Stroke" TargetName="ExpandPath" Value="#FF1CC4F7"/>
+                                                        <Setter Property="Fill" TargetName="ExpandPath" Value="#FF82DFFB"/>
+                                                    </MultiTrigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ToggleButton.Style>
+                        </ToggleButton>
+                        <ContentPresenter Grid.Column="2"
+                                          Content="{Binding Content}"
+                                          ContentTemplate="{Binding ContentTemplate, RelativeSource={RelativeSource AncestorType={x:Type local:TreeGridExpanderPresenter}}}"
+                                          ContentTemplateSelector="{Binding ContentTemplateSelector, RelativeSource={RelativeSource AncestorType={x:Type local:TreeGridExpanderPresenter}}}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>

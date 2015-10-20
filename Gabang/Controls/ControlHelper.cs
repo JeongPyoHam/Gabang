@@ -50,5 +50,43 @@ namespace Gabang.Controls
             }
             return null;
         }
+
+        /// <summary>
+        ///     Walks up the templated parent tree looking for a parent type.
+        /// </summary>
+        public static T FindParent<T>(FrameworkElement element) where T : FrameworkElement
+        {
+            FrameworkElement parent = element.TemplatedParent as FrameworkElement;
+
+            while (parent != null)
+            {
+                T correctlyTyped = parent as T;
+                if (correctlyTyped != null)
+                {
+                    return correctlyTyped;
+                }
+
+                parent = parent.TemplatedParent as FrameworkElement;
+            }
+
+            return null;
+        }
+
+        public static T FindVisualParent<T>(UIElement element) where T : UIElement
+        {
+            UIElement parent = element;
+            while (parent != null)
+            {
+                T correctlyTyped = parent as T;
+                if (correctlyTyped != null)
+                {
+                    return correctlyTyped;
+                }
+
+                parent = VisualTreeHelper.GetParent(parent) as UIElement;
+            }
+
+            return null;
+        }
     }
 }
