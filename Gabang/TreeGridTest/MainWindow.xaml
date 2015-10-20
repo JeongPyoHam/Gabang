@@ -31,7 +31,7 @@
                   AutoGenerateColumns="False">
             <DataGrid.Columns>
                 <control:TreeGridExpanderColumn Header="Name" CellTemplate="{StaticResource NameCellTemplate}" Width="Auto"
-                                                DepthBinding="{Binding Depth}" />
+                                                />
                 <DataGridTemplateColumn Header="Value" CellTemplate="{StaticResource ValueCellTemplate}" Width="*" />
                 <DataGridTextColumn Header="Type" Binding="{Binding Content.TypeName}" Width="*"/>
                 <DataGridTextColumn Header="Sub" Binding="{Binding Content.Sub.X}" Width="Auto"/>

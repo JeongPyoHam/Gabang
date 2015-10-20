@@ -17,8 +17,6 @@ namespace Gabang.Controls
             this.CanUserSortColumns = false;
         }
 
-        public virtual BindingBase DepthBinding { get; set; }
-
         protected override DependencyObject GetContainerForItemOverride()
         {
             return new TreeGridRow();

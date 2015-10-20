@@ -18,12 +18,5 @@ namespace Gabang.Controls
         public TreeGridExpanderPresenter()
         {
         }
-
-        public static DependencyProperty DepthProperty = DependencyProperty.Register("Depth", typeof(int), typeof(TreeGridExpanderPresenter));
-        public int Depth
-        {
-            get { return (int)GetValue(DepthProperty); }
-            set { SetValue(DepthProperty, value); }
-        }
     }
 }
