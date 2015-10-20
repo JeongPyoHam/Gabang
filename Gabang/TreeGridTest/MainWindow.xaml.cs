@@ -43,6 +43,7 @@ namespace TreeGridTest
                     TypeName = "t1",
                     Sub = new SubVariable() { X = "sub1" }, },
                 CreateVariables);
+            tree.PropertyChanged += Node_PropertyChanged;
             tree.CollectionChanged += Target_CollectionChanged;
 
             _linearized.Add(tree);
@@ -52,8 +53,6 @@ namespace TreeGridTest
             }
 
             this.varGrid.ItemsSource = _linearized;
-
-            this.varGrid.Items.Filter = this.Filter;
         }
 
         private bool Filter(object item)
@@ -103,13 +102,17 @@ namespace TreeGridTest
                     int insertIndex = e.NewStartingIndex;
                     foreach (var item in e.NewItems)
                     {
-                        _linearized.Insert(insertIndex, (ObservableTreeNode)item);
+                        var node = (ObservableTreeNode)item;
+                        node.PropertyChanged += Node_PropertyChanged;
+
+                        _linearized.Insert(insertIndex, node);
                         insertIndex++;
                     }
                     break;
                 case NotifyCollectionChangedAction.Remove:
                     for (int i = 0; i < e.OldItems.Count; i++)
                     {
+                        _linearized[e.OldStartingIndex].PropertyChanged -= Node_PropertyChanged;
                         _linearized.RemoveAt(e.OldStartingIndex);
                     }
                     break;
@@ -121,10 +124,22 @@ namespace TreeGridTest
             }
         }
 
+        private void Node_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "IsExpanded")
+            {
+                RefreshView();
+            }
+        }
+
         private void RefreshButton_Click(object sender, RoutedEventArgs e)
         {
+            RefreshView();
+        }
+
+        private void RefreshView()
+        {
             varGrid.Items.Filter = Filter;
-            //varGrid.Items.Refresh();
         }
     }
 }

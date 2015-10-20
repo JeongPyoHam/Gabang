@@ -52,12 +52,12 @@ namespace GabangCollection
             get { return _isExpanded; }
             set
             {
-                SetProperty<bool>(ref _isExpanded, value);
-
                 foreach (var child in Children)
                 {
-                    SetNodeVisibility(child);
+                    SetNodeVisibility(child, value);
                 }
+
+                SetProperty<bool>(ref _isExpanded, value);
             }
         }
 
@@ -135,7 +135,7 @@ namespace GabangCollection
         public virtual void InsertChildAt(int index, ObservableTreeNode item)
         {
             item.Parent = this;
-            SetNodeVisibility(item);
+            SetNodeVisibility(item, this.IsExpanded);
 
             int addedStartingIndex = AddUpChildCount(index);
 
@@ -386,9 +386,9 @@ namespace GabangCollection
             return count;
         }
 
-        private void SetNodeVisibility(ObservableTreeNode node)
+        private void SetNodeVisibility(ObservableTreeNode node, bool expanded)
         {
-            Visibility childVisibility = _isExpanded ? Visibility.Visible : Visibility.Collapsed;
+            Visibility childVisibility = expanded ? Visibility.Visible : Visibility.Collapsed;
 
             Traverse(
                 node,

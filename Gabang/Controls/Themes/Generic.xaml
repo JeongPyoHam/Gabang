@@ -5,6 +5,49 @@
     <local:MultiplicationConverter x:Key="MultiplicationConverter" />
     <local:BooleanToVisibilityConverter x:Key="HidingBoolToVisibilityConverter" ValueForTrue="Visible" ValueForFalse="Hidden" />
 
+    <Style x:Key="ExpanderToggleStyle" TargetType="{x:Type ToggleButton}">
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Width" Value="16"/>
+        <Setter Property="Height" Value="16"/>
+        <Setter Property="Visibility" Value="{Binding HasChildren, Converter={StaticResource HidingBoolToVisibilityConverter}}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ToggleButton}">
+                    <Border Background="Transparent" Height="16" Padding="5" Width="16">
+                        <Path x:Name="ExpandPath" Data="M0,0 L0,6 L6,0 z" Fill="White" Stroke="#FF818181">
+                            <Path.RenderTransform>
+                                <RotateTransform Angle="135" CenterY="3" CenterX="3"/>
+                            </Path.RenderTransform>
+                        </Path>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter Property="RenderTransform" TargetName="ExpandPath">
+                                <Setter.Value>
+                                    <RotateTransform Angle="180" CenterY="3" CenterX="3"/>
+                                </Setter.Value>
+                            </Setter>
+                            <Setter Property="Fill" TargetName="ExpandPath" Value="#FF595959"/>
+                            <Setter Property="Stroke" TargetName="ExpandPath" Value="#FF262626"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Stroke" TargetName="ExpandPath" Value="#FF27C7F7"/>
+                            <Setter Property="Fill" TargetName="ExpandPath" Value="#FFCCEEFB"/>
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsMouseOver" Value="True"/>
+                                <Condition Property="IsChecked" Value="True"/>
+                            </MultiTrigger.Conditions>
+                            <Setter Property="Stroke" TargetName="ExpandPath" Value="#FF1CC4F7"/>
+                            <Setter Property="Fill" TargetName="ExpandPath" Value="#FF82DFFB"/>
+                        </MultiTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
     <Style x:Key="{x:Type local:TreeGridRow}" TargetType="{x:Type local:TreeGridRow}"  >
         <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"/>
         <Setter Property="SnapsToDevicePixels" Value="true"/>
@@ -72,52 +115,8 @@
                                 Converter={StaticResource MultiplicationConverter}, ConverterParameter=16.0}" /> <!-- TODO: Do not hardcode 16.0 -->
                         <ToggleButton x:Name="Expander"
                               Grid.Column="1"
-                              ClickMode="Press" IsChecked="{Binding IsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                            <ToggleButton.Style>
-                                <Style TargetType="{x:Type ToggleButton}">
-                                    <Setter Property="Focusable" Value="False"/>
-                                    <Setter Property="Width" Value="16"/>
-                                    <Setter Property="Height" Value="16"/>
-                                    <Setter Property="Visibility" Value="{Binding HasChildren, Converter={StaticResource HidingBoolToVisibilityConverter}}" />
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="{x:Type ToggleButton}">
-                                                <Border Background="Transparent" Height="16" Padding="5" Width="16">
-                                                    <Path x:Name="ExpandPath" Data="M0,0 L0,6 L6,0 z" Fill="White" Stroke="#FF818181">
-                                                        <Path.RenderTransform>
-                                                            <RotateTransform Angle="135" CenterY="3" CenterX="3"/>
-                                                        </Path.RenderTransform>
-                                                    </Path>
-                                                </Border>
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsChecked" Value="True">
-                                                        <Setter Property="RenderTransform" TargetName="ExpandPath">
-                                                            <Setter.Value>
-                                                                <RotateTransform Angle="180" CenterY="3" CenterX="3"/>
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                        <Setter Property="Fill" TargetName="ExpandPath" Value="#FF595959"/>
-                                                        <Setter Property="Stroke" TargetName="ExpandPath" Value="#FF262626"/>
-                                                    </Trigger>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter Property="Stroke" TargetName="ExpandPath" Value="#FF27C7F7"/>
-                                                        <Setter Property="Fill" TargetName="ExpandPath" Value="#FFCCEEFB"/>
-                                                    </Trigger>
-                                                    <MultiTrigger>
-                                                        <MultiTrigger.Conditions>
-                                                            <Condition Property="IsMouseOver" Value="True"/>
-                                                            <Condition Property="IsChecked" Value="True"/>
-                                                        </MultiTrigger.Conditions>
-                                                        <Setter Property="Stroke" TargetName="ExpandPath" Value="#FF1CC4F7"/>
-                                                        <Setter Property="Fill" TargetName="ExpandPath" Value="#FF82DFFB"/>
-                                                    </MultiTrigger>
-                                                </ControlTemplate.Triggers>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                </Style>
-                            </ToggleButton.Style>
-                        </ToggleButton>
+                              Style="{StaticResource ExpanderToggleStyle}"
+                              ClickMode="Press" IsChecked="{Binding IsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                         <ContentPresenter Grid.Column="2"
                                           Content="{Binding Content}"
                                           ContentTemplate="{Binding ContentTemplate, RelativeSource={RelativeSource AncestorType={x:Type local:TreeGridExpanderPresenter}}}"
