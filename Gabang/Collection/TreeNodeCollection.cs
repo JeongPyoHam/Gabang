@@ -49,7 +49,6 @@ namespace GabangCollection
     {
         public TreeToListCollection(ObservableTreeNode rootNode)
         {
-            rootNode.PropertyChanged += Node_PropertyChanged;
             rootNode.CollectionChanged += Root_CollectionChanged;
 
             this.AddNode(rootNode);
