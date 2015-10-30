@@ -128,4 +128,25 @@
             </Setter.Value>
         </Setter>
     </Style>
+
+    <Style x:Key="{x:Type local:VirtualizingGrid}" TargetType="{x:Type local:VirtualizingGrid}">
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <local:VirtualizingGridPanel />
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type local:VirtualizingGrid}">
+                    <Border SnapsToDevicePixels="True">
+                        <ScrollViewer x:Name="VG_ScrollViewer" Focusable="False">
+                            <ItemsPresenter />
+                        </ScrollViewer>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
 </ResourceDictionary>

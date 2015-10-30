@@ -46,6 +46,9 @@
   <ItemGroup>
     <Compile Include="BindableBase.cs" />
     <Compile Include="BooleanToVisibilityConverter.cs" />
+    <Compile Include="VirtualizingGrid\DataSource.cs" />
+    <Compile Include="VirtualizingGrid\GridDataSource.cs" />
+    <Compile Include="VirtualizingGrid\VirtualizingGrid.cs" />
     <Page Include="Themes\Generic.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
