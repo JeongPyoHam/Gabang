@@ -5,10 +5,10 @@ using System.Collections.Generic;
 namespace Gabang.Controls {
 
     /// <summary>
-    /// integer collection
+    /// A simulated collection that provides integer range
     /// </summary>
-    public class DataSource : IList<int>, IList {
-        public DataSource(int count, int start = 0) {
+    public class IntegerList : IList<int>, IList {
+        public IntegerList(int start, int count) {
             Start = start;
             Count = count;
         }
@@ -23,7 +23,7 @@ namespace Gabang.Controls {
             }
 
             set {
-                throw new NotSupportedException($"{typeof(DataSource)} doesn't support assigning item's value");
+                throw new NotSupportedException($"{typeof(IntegerList)} doesn't support assigning item's value");
             }
         }
 
@@ -48,11 +48,11 @@ namespace Gabang.Controls {
         }
 
         public void Add(int item) {
-            throw new NotSupportedException($"{typeof(DataSource)} doesn't support adding new item");
+            throw new NotSupportedException($"{typeof(IntegerList)} doesn't support adding new item");
         }
 
         public void Clear() {
-            throw new NotSupportedException($"{typeof(DataSource)} doesn't support clearing items");
+            throw new NotSupportedException($"{typeof(IntegerList)} doesn't support clearing items");
         }
 
         public bool Contains(int item) {
@@ -76,15 +76,15 @@ namespace Gabang.Controls {
         }
 
         public void Insert(int index, int item) {
-            throw new NotSupportedException($"{typeof(DataSource)} doesn't support inserting item");
+            throw new NotSupportedException($"{typeof(IntegerList)} doesn't support inserting item");
         }
 
         public bool Remove(int item) {
-            throw new NotSupportedException($"{typeof(DataSource)} doesn't support removing item");
+            throw new NotSupportedException($"{typeof(IntegerList)} doesn't support removing item");
         }
 
         public void RemoveAt(int index) {
-            throw new NotSupportedException($"{typeof(DataSource)} doesn't support removing item");
+            throw new NotSupportedException($"{typeof(IntegerList)} doesn't support removing item");
         }
 
         IEnumerator IEnumerable.GetEnumerator() {
@@ -92,7 +92,7 @@ namespace Gabang.Controls {
         }
 
         public int Add(object value) {
-            throw new NotSupportedException($"{typeof(DataSource)} doesn't support adding item");
+            throw new NotSupportedException($"{typeof(IntegerList)} doesn't support adding item");
         }
 
         public bool Contains(object value) {
@@ -110,11 +110,11 @@ namespace Gabang.Controls {
         }
 
         public void Insert(int index, object value) {
-            throw new NotSupportedException($"{typeof(DataSource)} doesn't support inserting item");
+            throw new NotSupportedException($"{typeof(IntegerList)} doesn't support inserting item");
         }
 
         public void Remove(object value) {
-            throw new NotSupportedException($"{typeof(DataSource)} doesn't support removing item");
+            throw new NotSupportedException($"{typeof(IntegerList)} doesn't support removing item");
         }
 
         public void CopyTo(Array array, int index) {

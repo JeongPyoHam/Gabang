@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 namespace Gabang.Controls {
-    public class GridDataSource : IList<DataSource>, IList {
+    public class GridDataSource : IList<IntegerList>, IList {
         public GridDataSource(int nrow, int ncol) {
             RowCount = nrow;
             ColumnCount = ncol;
@@ -30,13 +30,13 @@ namespace Gabang.Controls {
             }
 
             set {
-                this[index] = (DataSource) value;
+                this[index] = (IntegerList) value;
             }
         }
 
-        public DataSource this[int index] {
+        public IntegerList this[int index] {
             get {
-                return new DataSource(ColumnCount, index * ColumnCount);
+                return new IntegerList(index * ColumnCount, ColumnCount);
             }
 
             set {
@@ -44,7 +44,7 @@ namespace Gabang.Controls {
             }
         }
 
-        public int IndexOf(DataSource item) {
+        public int IndexOf(IntegerList item) {
             if (item.Count == ColumnCount
                 && item.Start >=0
                 && item.Start <= (RowCount * (ColumnCount - 1))) {
@@ -55,7 +55,7 @@ namespace Gabang.Controls {
             return -1;
         }
 
-        public void Insert(int index, DataSource item) {
+        public void Insert(int index, IntegerList item) {
             throw new NotSupportedException($"{typeof(GridDataSource)} doesn't support inserting item");
         }
 
@@ -63,7 +63,7 @@ namespace Gabang.Controls {
             throw new NotSupportedException($"{typeof(GridDataSource)} doesn't support removing item");
         }
 
-        public void Add(DataSource item) {
+        public void Add(IntegerList item) {
             throw new NotSupportedException($"{typeof(GridDataSource)} doesn't support adding item");
         }
 
@@ -71,19 +71,19 @@ namespace Gabang.Controls {
             throw new NotSupportedException($"{typeof(GridDataSource)} doesn't support clearing item");
         }
 
-        public bool Contains(DataSource item) {
+        public bool Contains(IntegerList item) {
             return IndexOf(item) != -1;
         }
 
-        public void CopyTo(DataSource[] array, int arrayIndex) {
+        public void CopyTo(IntegerList[] array, int arrayIndex) {
             throw new NotImplementedException();  
         }
 
-        public bool Remove(DataSource item) {
+        public bool Remove(IntegerList item) {
             throw new NotSupportedException($"{typeof(GridDataSource)} doesn't support removing item");
         }
 
-        public IEnumerator<DataSource> GetEnumerator() {
+        public IEnumerator<IntegerList> GetEnumerator() {
             for (int i = 0; i < Count; i++) {
                 yield return this[i];
             }
@@ -98,15 +98,15 @@ namespace Gabang.Controls {
         }
 
         public bool Contains(object value) {
-            if (value is DataSource) {
-                return Contains((DataSource)value);
+            if (value is IntegerList) {
+                return Contains((IntegerList)value);
             }
             return false;
         }
 
         public int IndexOf(object value) {
-            if (value is DataSource) {
-                return IndexOf((DataSource)value);
+            if (value is IntegerList) {
+                return IndexOf((IntegerList)value);
             }
             return -1;
         }

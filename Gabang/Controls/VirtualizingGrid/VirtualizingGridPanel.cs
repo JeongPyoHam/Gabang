@@ -20,14 +20,14 @@ namespace Gabang.Controls {
         protected override Size MeasureOverride(Size availableSize) {
             EnsureItemContainerGenerator();
 
-            IItemContainerGenerator itemGenerator = this.ItemContainerGenerator;
-            if (itemGenerator != null) {
-                GeneratorPosition position = itemGenerator.GeneratorPositionFromIndex(0);
+            //IItemContainerGenerator itemGenerator = this.ItemContainerGenerator;
+            //if (itemGenerator != null) {
+            //    GeneratorPosition position = itemGenerator.GeneratorPositionFromIndex(0);
 
-                using (itemGenerator.StartAt(position, GeneratorDirection.Forward)) {
-                    var item = itemGenerator.GenerateNext();
-                }
-            }
+            //    using (itemGenerator.StartAt(position, GeneratorDirection.Forward)) {
+            //        var item = itemGenerator.GenerateNext();
+            //    }
+            //}
 
             return base.MeasureOverride(availableSize);
         }
@@ -37,7 +37,7 @@ namespace Gabang.Controls {
         }
 
         private void EnsureItemContainerGenerator() {
-            var children = this.Children;
+            var children = this.Children;   // Touching Children requires to make ItemContainerGenerator non-null
         }
     }
 }

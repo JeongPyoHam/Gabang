@@ -46,11 +46,11 @@
   <ItemGroup>
     <Compile Include="BindableBase.cs" />
     <Compile Include="BooleanToVisibilityConverter.cs" />
-    <Compile Include="VirtualizingGrid\DataSource.cs" />
-    <Compile Include="VirtualizingGrid\GridDataSource.cs" />
-    <Compile Include="VirtualizingGrid\JointGrid.cs" />
+    <Compile Include="VirtualizingGrid\IntegerList.cs" />
+    <Compile Include="TestDataSource\GridDataSource.cs" />
+    <Compile Include="VirtualizingGrid\JointCollectionGrid.cs" />
     <Compile Include="VirtualizingGrid\VirtualizingGridPanel.cs" />
-    <Compile Include="VirtualizingGrid\JointGridRow.cs" />
+    <Compile Include="VirtualizingGrid\JointCollectionGridRow.cs" />
     <Page Include="Themes\Generic.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,10 +19,14 @@ namespace Gabang.TreeGridTest {
     /// Interaction logic for GridWindow.xaml
     /// </summary>
     public partial class GridWindow : Window {
+
+        public static int RowCount = 10;
+        public static int ColumnCount = 10;
+
         public GridWindow() {
             InitializeComponent();
 
-            this.VGrid.ItemsSource = new GridDataSource(10, 10);
+            this.VGrid.ItemsSource = new GridDataSource(RowCount, ColumnCount);
         }
     }
 }

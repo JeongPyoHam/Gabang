@@ -18,27 +18,26 @@ namespace Gabang.Controls {
     /// Row Header
     /// Column Header
     /// </summary>
-    public class JointGrid : MultiSelector {
+    public class JointCollectionGrid : MultiSelector {
 
-        static JointGrid() {
-            DefaultStyleKeyProperty.OverrideMetadata(typeof(JointGrid), new FrameworkPropertyMetadata(typeof(JointGrid)));
+        static JointCollectionGrid() {
+            DefaultStyleKeyProperty.OverrideMetadata(typeof(JointCollectionGrid), new FrameworkPropertyMetadata(typeof(JointCollectionGrid)));
         }
 
-        public JointGrid() {
+        public JointCollectionGrid() {
         }
-
-        #region public
-
-        public IList<object> ColumnHeaderProvider { get; set; }
-
-        public IList<object> RowHeaderProvider { get; set; }
-
-        #endregion
 
         #region override
 
         protected override DependencyObject GetContainerForItemOverride() {
-            return new JointGridRow();
+            return new JointCollectionGridRow();
+        }
+
+        protected override void PrepareContainerForItemOverride(DependencyObject element, object item) {
+            base.PrepareContainerForItemOverride(element, item);
+
+            JointCollectionGridRow row = (JointCollectionGridRow)element;
+            row.Prepare(this, item);
         }
 
         protected override void OnItemsSourceChanged(IEnumerable oldValue, IEnumerable newValue) {

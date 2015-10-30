@@ -68,5 +68,5 @@
 
     </DataGrid>-->
 
-    <control:JointGrid x:Name="VGrid"></control:JointGrid>
+    <control:JointCollectionGrid x:Name="VGrid"></control:JointCollectionGrid>
 </Window>
