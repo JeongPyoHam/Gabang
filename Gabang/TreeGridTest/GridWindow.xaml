@@ -68,5 +68,5 @@
 
     </DataGrid>-->
 
-    <control:VirtualizingGrid x:Name="VGrid"></control:VirtualizingGrid>
+    <control:JointGrid x:Name="VGrid"></control:JointGrid>
 </Window>
