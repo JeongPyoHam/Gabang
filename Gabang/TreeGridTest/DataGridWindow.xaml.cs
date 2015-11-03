@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,17 +15,13 @@ using Gabang.Controls;
 
 namespace Gabang.TreeGridTest {
     /// <summary>
-    /// Interaction logic for GridWindow.xaml
+    /// Interaction logic for DataGridWindow.xaml
     /// </summary>
-    public partial class GridWindow : Window {
-
-        public static int RowCount = 1000;
-        public static int ColumnCount = 1000;
-
-        public GridWindow() {
+    public partial class DataGridWindow : Window {
+        public DataGridWindow() {
             InitializeComponent();
 
-            this.VGrid.ItemsSource = new GridDataSource(RowCount, ColumnCount);
+            RootDataGrid.ItemsSource = new GridDataSource(100, 100);
         }
     }
 }

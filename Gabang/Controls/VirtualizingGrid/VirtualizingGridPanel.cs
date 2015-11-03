@@ -20,15 +20,6 @@ namespace Gabang.Controls {
         protected override Size MeasureOverride(Size availableSize) {
             EnsureItemContainerGenerator();
 
-            //IItemContainerGenerator itemGenerator = this.ItemContainerGenerator;
-            //if (itemGenerator != null) {
-            //    GeneratorPosition position = itemGenerator.GeneratorPositionFromIndex(0);
-
-            //    using (itemGenerator.StartAt(position, GeneratorDirection.Forward)) {
-            //        var item = itemGenerator.GenerateNext();
-            //    }
-            //}
-
             return base.MeasureOverride(availableSize);
         }
 

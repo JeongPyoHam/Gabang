@@ -33,5 +33,14 @@ namespace Gabang.Controls {
             var items = (IList)item;
             ItemsSource = items;
         }
+
+        protected override DependencyObject GetContainerForItemOverride() {
+            return new TextBlock();// base.GetContainerForItemOverride();
+        }
+
+        protected override void PrepareContainerForItemOverride(DependencyObject element, object item) {
+            //base.PrepareContainerForItemOverride(element, item);
+            ((TextBlock)element).Text = item.ToString();
+        }
     }
 }
