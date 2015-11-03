@@ -7,13 +7,12 @@ using System.Windows;
 using System.Windows.Controls;
 
 namespace Gabang.Controls {
-    public class JointCollectionGridCell : ContentControl {
+    public class VariableGridCell : ContentControl {
 
-        private JointCollectionGrid _grid;
-        private JointCollectionGridRow _row;
+        private VariableGridRow _row;
 
 
-        internal void Prepare(JointCollectionGridRow owningRow, object item) {
+        internal void Prepare(VariableGridRow owningRow, object item) {
             _row = owningRow;
             int columnIndex = _row.ItemContainerGenerator.IndexFromContainer(this);
 

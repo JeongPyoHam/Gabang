@@ -67,21 +67,12 @@
     <Compile Include="TreeGridExpanderColumn.cs" />
     <Compile Include="TreeGridRow.cs" />
     <Compile Include="Variable.cs" />
-    <Compile Include="VariableGrid.xaml.cs">
-      <DependentUpon>VariableGrid.xaml</DependentUpon>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Collection\Collection.csproj">
       <Project>{fa74ed98-3279-4215-a9e5-364615aca6b2}</Project>
       <Name>Collection</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Page Include="VariableGrid.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

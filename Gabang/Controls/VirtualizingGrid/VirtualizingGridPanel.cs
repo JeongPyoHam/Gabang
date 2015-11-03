@@ -18,7 +18,7 @@ namespace Gabang.Controls {
     /// column item layout should be synchronized, too
     /// 
     /// </summary>
-    public class VirtualizingGridPanel : VirtualizingStackPanel, IScrollInfo {
+    public class VariableGridPanel : VirtualizingStackPanel, IScrollInfo {
 
         protected override Size MeasureOverride(Size constraint) {
             var desired = base.MeasureOverride(constraint);

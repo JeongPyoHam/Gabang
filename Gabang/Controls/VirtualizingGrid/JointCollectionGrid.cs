@@ -18,13 +18,13 @@ namespace Gabang.Controls {
     /// Row Header
     /// Column Header
     /// </summary>
-    public class JointCollectionGrid : MultiSelector {
+    public class VariableGrid : MultiSelector {
 
-        static JointCollectionGrid() {
-            DefaultStyleKeyProperty.OverrideMetadata(typeof(JointCollectionGrid), new FrameworkPropertyMetadata(typeof(JointCollectionGrid)));
+        static VariableGrid() {
+            DefaultStyleKeyProperty.OverrideMetadata(typeof(VariableGrid), new FrameworkPropertyMetadata(typeof(VariableGrid)));
         }
 
-        public JointCollectionGrid() {
+        public VariableGrid() {
         }
 
         public override void OnApplyTemplate() {
@@ -37,7 +37,7 @@ namespace Gabang.Controls {
             }
         }
 
-        List<JointCollectionGridRow> _visibleRows = new List<JointCollectionGridRow>();
+        List<VariableGridRow> _visibleRows = new List<VariableGridRow>();
         bool _isBarSet = false;
         internal void NotifyScrollInfo(double max, double offset, double viewportSize) {
             if (_isBarSet) return;
@@ -55,13 +55,13 @@ namespace Gabang.Controls {
         #region override
 
         protected override DependencyObject GetContainerForItemOverride() {
-            return new JointCollectionGridRow();
+            return new VariableGridRow();
         }
 
         protected override void PrepareContainerForItemOverride(DependencyObject element, object item) {
             base.PrepareContainerForItemOverride(element, item);
 
-            JointCollectionGridRow row = (JointCollectionGridRow)element;
+            VariableGridRow row = (VariableGridRow)element;
             row.Prepare(this, item);
 
             _visibleRows.Add(row);
@@ -70,7 +70,7 @@ namespace Gabang.Controls {
         protected override void ClearContainerForItemOverride(DependencyObject element, object item) {
             base.ClearContainerForItemOverride(element, item);
 
-            JointCollectionGridRow row = (JointCollectionGridRow)element;
+            VariableGridRow row = (VariableGridRow)element;
             row.Clear(this, item);
 
             _visibleRows.Remove(row);

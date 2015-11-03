@@ -10,14 +10,14 @@ using System.Windows.Controls.Primitives;
 
 namespace Gabang.Controls {
     /// <summary>
-    /// Row of <see cref="JointCollectionGrid"/>, which is ItemsControl itself
+    /// Row of <see cref="VariableGrid"/>, which is ItemsControl itself
     /// </summary>
-    public class JointCollectionGridRow : ItemsControl {
-        static JointCollectionGridRow() {
-            DefaultStyleKeyProperty.OverrideMetadata(typeof(JointCollectionGridRow), new FrameworkPropertyMetadata(typeof(JointCollectionGridRow)));
+    public class VariableGridRow : ItemsControl {
+        static VariableGridRow() {
+            DefaultStyleKeyProperty.OverrideMetadata(typeof(VariableGridRow), new FrameworkPropertyMetadata(typeof(VariableGridRow)));
         }
 
-        public JointCollectionGridRow() {
+        public VariableGridRow() {
         }
 
         public object Header { get; set; }
@@ -30,16 +30,16 @@ namespace Gabang.Controls {
 
         internal IScrollInfo ScrollOwner { get; private set; }
 
-        internal JointCollectionGrid OwningJointGrid { get; private set; }
+        internal VariableGrid OwningJointGrid { get; private set; }
 
         protected override DependencyObject GetContainerForItemOverride() {
-            return new JointCollectionGridCell();
+            return new VariableGridCell();
         }
 
         protected override void PrepareContainerForItemOverride(DependencyObject element, object item) {
             base.PrepareContainerForItemOverride(element, item);
 
-            var cell = (JointCollectionGridCell)element;
+            var cell = (VariableGridCell)element;
             cell.Prepare(this, item);
         }
 
@@ -47,7 +47,7 @@ namespace Gabang.Controls {
             base.OnApplyTemplate();
         }
 
-        internal void Prepare(JointCollectionGrid owner, object item) {
+        internal void Prepare(VariableGrid owner, object item) {
             if (!(item is IList)) {
                 throw new NotSupportedException("JointCollectionGridRow supports only IList for item");
             }
@@ -58,7 +58,7 @@ namespace Gabang.Controls {
             ItemsSource = items;
         }
 
-        internal void Clear(JointCollectionGrid owner, object item) {
+        internal void Clear(VariableGrid owner, object item) {
         }
 
         internal void NotifyScroll(ScrollEventArgs e) {
