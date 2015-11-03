@@ -9,15 +9,23 @@ using System.Windows.Controls;
 namespace Gabang.Controls {
     public class JointCollectionGridCell : ContentControl {
 
-        private JointCollectionGrid OwningGrid { get; set; }
+        private JointCollectionGrid _grid;
+        private JointCollectionGridRow _row;
+        private JointCollectionGridColumn _column;
 
-        internal void Prepare(JointCollectionGrid owningGrid, object item) {
-            OwningGrid = owningGrid;
+
+
+        internal void Prepare(JointCollectionGridRow owningRow, object item) {
+            _row = owningRow;
+            int columnIndex = _row.ItemContainerGenerator.IndexFromContainer(this);
+
+            _column = _row.OwningJointGrid.Columns[columnIndex];
+
             this.Content = item;
         }
 
         protected override Size MeasureOverride(Size constraint) {
-            return base.MeasureOverride(constraint);
+            return new Size(_column.EstimatedWidth, _row.EstimatedHeight);
         }
     }
 }

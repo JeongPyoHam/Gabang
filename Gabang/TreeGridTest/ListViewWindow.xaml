@@ -88,7 +88,7 @@
     <ListView x:Name="RootListView" ScrollViewer.CanContentScroll="True" Style="{DynamicResource ListViewStyle1}">
         <ListView.ItemsPanel>
             <ItemsPanelTemplate>
-                <control:VirtualizingGridPanel Orientation="Vertical" IsVirtualizing="True" CanHorizontallyScroll="False" />
+                <VirtualizingStackPanel Orientation="Vertical" IsVirtualizing="True" CanHorizontallyScroll="False" />
             </ItemsPanelTemplate>
         </ListView.ItemsPanel>
         <ListView.ItemTemplate>
@@ -97,7 +97,7 @@
                 <ListView ItemsSource="{Binding}" Style="{StaticResource RowListViewStyle}">
                     <ListView.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <control:VirtualizingGridPanel Orientation="Horizontal" IsVirtualizing="True" />
+                            <VirtualizingStackPanel Orientation="Horizontal" IsVirtualizing="True" />
                         </ItemsPanelTemplate>
                     </ListView.ItemsPanel>
                 </ListView>

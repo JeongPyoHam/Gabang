@@ -29,11 +29,30 @@ namespace Gabang.Controls {
 
         public override void OnApplyTemplate() {
             base.OnApplyTemplate();
+        }
 
-            var scrollBar = (ScrollBar)ControlHelper.GetChild(this, "PART_HorizontalScrollBar");
-            if (scrollBar != null) {
-                scrollBar.ViewportSize = 10;
+        public JointCollectionGridColumnCollection Columns { get; private set; }
+
+
+        private void Bar_Scroll(object sender, ScrollEventArgs e) {
+            foreach (var row in _visibleRows) {
+                row.NotifyScroll(e);
             }
+        }
+
+        List<JointCollectionGridRow> _visibleRows = new List<JointCollectionGridRow>();
+        bool _isBarSet = false;
+        internal void NotifyScrollInfo(double max, double offset, double viewportSize) {
+            if (_isBarSet) return;
+
+            _isBarSet = true;
+            var bar = (ScrollBar)ControlHelper.GetChild(this, "HorizontalScrollBar");
+
+            bar.Maximum = max;
+            bar.Value = offset;
+            bar.ViewportSize = viewportSize;
+
+            bar.Scroll += Bar_Scroll;
         }
 
         #region override
@@ -47,6 +66,8 @@ namespace Gabang.Controls {
 
             JointCollectionGridRow row = (JointCollectionGridRow)element;
             row.Prepare(this, item);
+
+            _visibleRows.Add(row);
         }
 
         protected override void ClearContainerForItemOverride(DependencyObject element, object item) {
@@ -54,6 +75,8 @@ namespace Gabang.Controls {
 
             JointCollectionGridRow row = (JointCollectionGridRow)element;
             row.Clear(this, item);
+
+            _visibleRows.Remove(row);
         }
 
         protected override void OnItemsSourceChanged(IEnumerable oldValue, IEnumerable newValue) {
@@ -62,8 +85,15 @@ namespace Gabang.Controls {
             }
 
             base.OnItemsSourceChanged(oldValue, newValue);
+
+            Columns = new JointCollectionGridColumnCollection(((GridDataSource)newValue).ColumnCount);
         }
 
+        protected override Size MeasureOverride(Size constraint) {
+            var desired = base.MeasureOverride(constraint);
+
+            return desired;
+        }
 
         #endregion override
     }

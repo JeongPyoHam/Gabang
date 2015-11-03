@@ -22,7 +22,13 @@ namespace Gabang.Controls {
 
         public object Header { get; set; }
 
-        private ScrollViewer ScrollOwner { get; set; }
+        public double EstimatedHeight {
+            get {
+                return 40;
+            }
+        }
+
+        internal IScrollInfo ScrollOwner { get; private set; }
 
         internal JointCollectionGrid OwningJointGrid { get; private set; }
 
@@ -34,16 +40,11 @@ namespace Gabang.Controls {
             base.PrepareContainerForItemOverride(element, item);
 
             var cell = (JointCollectionGridCell)element;
-            cell.Prepare(OwningJointGrid, item);
+            cell.Prepare(this, item);
         }
 
         public override void OnApplyTemplate() {
             base.OnApplyTemplate();
-
-            this.ScrollOwner = ControlHelper.FindVisualParent<ScrollViewer>(this);
-            if (ScrollOwner != null) {
-                ScrollOwner.ScrollChanged += Owner_ScrollChanged;
-            }
         }
 
         internal void Prepare(JointCollectionGrid owner, object item) {
@@ -58,19 +59,30 @@ namespace Gabang.Controls {
         }
 
         internal void Clear(JointCollectionGrid owner, object item) {
-            if (ScrollOwner != null) {
-                ScrollOwner.ScrollChanged -= Owner_ScrollChanged;
-            }
-            ScrollOwner = null;
         }
 
-        private void Owner_ScrollChanged(object sender, ScrollChangedEventArgs e) {
-            if (ScrollOwner == null) return;
-
-            if (e.HorizontalChange != 0) {
-                ScrollOwner.ScrollToHorizontalOffset(e.HorizontalOffset);
-            }
+        internal void NotifyScroll(ScrollEventArgs e) {
+            ScrollOwner?.SetHorizontalOffset(e.NewValue);
         }
 
+        protected override Size MeasureOverride(Size constraint) {
+            var desired = base.MeasureOverride(constraint);
+
+            if (this.ScrollOwner == null) {
+
+                var sv = (VirtualizingStackPanel)ControlHelper.GetChild(this, typeof(VirtualizingStackPanel));
+                this.ScrollOwner = sv;
+
+                OwningJointGrid.NotifyScrollInfo(ScrollOwner.ExtentWidth, ScrollOwner.HorizontalOffset, ScrollOwner.ViewportWidth);
+            }
+
+            return desired;
+        }
+
+        protected override Size ArrangeOverride(Size arrangeBounds) {
+            var arranged = base.ArrangeOverride(arrangeBounds);
+
+            return arranged;
+        }
     }
 }

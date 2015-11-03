@@ -6,8 +6,10 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Media;
 
 namespace Gabang.Controls {
+
     /// <summary>
     /// a panel(vertical) of row panel(horizontal)
     /// send horizontal scroll to each row panel
@@ -16,19 +18,25 @@ namespace Gabang.Controls {
     /// column item layout should be synchronized, too
     /// 
     /// </summary>
-    public class VirtualizingGridPanel : VirtualizingStackPanel {
-        protected override Size MeasureOverride(Size availableSize) {
-            EnsureItemContainerGenerator();
+    public class VirtualizingGridPanel : VirtualizingStackPanel, IScrollInfo {
 
-            return base.MeasureOverride(availableSize);
+        protected override Size MeasureOverride(Size constraint) {
+            var desired = base.MeasureOverride(constraint);
+
+            //SetScrollInfo();
+
+            return desired;
         }
 
-        protected override Size ArrangeOverride(Size finalSize) {
-            return base.ArrangeOverride(finalSize);
-        }
+        public IScrollInfo ChildScrollInfo { get; private set; }
 
-        private void EnsureItemContainerGenerator() {
-            var children = this.Children;   // Touching Children requires to make ItemContainerGenerator non-null
+        private void SetScrollInfo() {
+            if (Children.Count > 0) {
+                var childPanel = Children[0] as VirtualizingStackPanel;
+                if (childPanel != null) {
+                    ChildScrollInfo = childPanel;
+                }
+            }
         }
     }
 }

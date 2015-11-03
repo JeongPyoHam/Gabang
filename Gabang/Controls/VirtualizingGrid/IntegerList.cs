@@ -20,7 +20,7 @@ namespace Gabang.Controls {
 
         public int this[int index] {
             get {
-                Debug.WriteLine($"IntegerList[{Start}][{index}] getter");
+                //Debug.WriteLine($"IntegerList[{Start}][{index}] getter");
                 return index + Start;
             }
 

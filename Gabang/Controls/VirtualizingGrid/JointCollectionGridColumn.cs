@@ -4,7 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Gabang.Controls.VirtualizingGrid {
+namespace Gabang.Controls {
     public class JointCollectionGridColumn {
+        public double EstimatedWidth {
+            get {
+                return 50;
+            }
+        }
     }
 }
