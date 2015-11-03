@@ -6,12 +6,13 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 
 namespace Gabang.Controls {
     /// <summary>
     /// Row of <see cref="JointCollectionGrid"/>, which is ItemsControl itself
     /// </summary>
-    public class JointCollectionGridRow : ItemsControl {
+    public class JointCollectionGridRow : ListBox {
         static JointCollectionGridRow() {
             DefaultStyleKeyProperty.OverrideMetadata(typeof(JointCollectionGridRow), new FrameworkPropertyMetadata(typeof(JointCollectionGridRow)));
         }
@@ -21,11 +22,22 @@ namespace Gabang.Controls {
 
         public object Header { get; set; }
 
+        private ScrollViewer ScrollOwner { get; set; }
+
         internal JointCollectionGrid OwningJointGrid { get; private set; }
+
+        public override void OnApplyTemplate() {
+            base.OnApplyTemplate();
+
+            this.ScrollOwner = ControlHelper.FindVisualParent<ScrollViewer>(this);
+            if (ScrollOwner != null) {
+                ScrollOwner.ScrollChanged += Owner_ScrollChanged;
+            }
+        }
 
         internal void Prepare(JointCollectionGrid owner, object item) {
             if (!(item is IList)) {
-                throw new NotSupportedException("");
+                throw new NotSupportedException("JointCollectionGridRow supports only IList for item");
             }
 
             OwningJointGrid = owner;
@@ -34,13 +46,20 @@ namespace Gabang.Controls {
             ItemsSource = items;
         }
 
-        protected override DependencyObject GetContainerForItemOverride() {
-            return new TextBlock();// base.GetContainerForItemOverride();
+        internal void Clear(JointCollectionGrid owner, object item) {
+            if (ScrollOwner != null) {
+                ScrollOwner.ScrollChanged -= Owner_ScrollChanged;
+            }
+            ScrollOwner = null;
         }
 
-        protected override void PrepareContainerForItemOverride(DependencyObject element, object item) {
-            //base.PrepareContainerForItemOverride(element, item);
-            ((TextBlock)element).Text = item.ToString();
+        private void Owner_ScrollChanged(object sender, ScrollChangedEventArgs e) {
+            if (ScrollOwner == null) return;
+
+            if (e.HorizontalChange != 0) {
+                ScrollOwner.ScrollToHorizontalOffset(e.HorizontalOffset);
+            }
         }
+
     }
 }

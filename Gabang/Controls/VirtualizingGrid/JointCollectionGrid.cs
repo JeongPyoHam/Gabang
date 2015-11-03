@@ -27,6 +27,15 @@ namespace Gabang.Controls {
         public JointCollectionGrid() {
         }
 
+        public override void OnApplyTemplate() {
+            base.OnApplyTemplate();
+
+            var scrollBar = (ScrollBar)ControlHelper.GetChild(this, "PART_HorizontalScrollBar");
+            if (scrollBar != null) {
+                scrollBar.ViewportSize = 10;
+            }
+        }
+
         #region override
 
         protected override DependencyObject GetContainerForItemOverride() {
@@ -40,6 +49,13 @@ namespace Gabang.Controls {
             row.Prepare(this, item);
         }
 
+        protected override void ClearContainerForItemOverride(DependencyObject element, object item) {
+            base.ClearContainerForItemOverride(element, item);
+
+            JointCollectionGridRow row = (JointCollectionGridRow)element;
+            row.Clear(this, item);
+        }
+
         protected override void OnItemsSourceChanged(IEnumerable oldValue, IEnumerable newValue) {
             if (newValue is IList<IList<object>>) {
                 throw new NotSupportedException($"JointGrid supports only joint IList collection of which type is {typeof(IList<IList<object>>)}");
@@ -47,6 +63,7 @@ namespace Gabang.Controls {
 
             base.OnItemsSourceChanged(oldValue, newValue);
         }
+
 
         #endregion override
     }

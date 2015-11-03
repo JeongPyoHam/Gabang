@@ -24,16 +24,4 @@ namespace Gabang.TreeGridTest {
             RootListView.ItemsSource = new GridDataSource(100, 100);
         }
     }
-
-    public class ListViewItemEx : ListViewItem {
-        protected override Size MeasureOverride(Size constraint) {
-            return base.MeasureOverride(constraint);
-        }
-    }
-
-    public class ListViewEx : ListView {
-        protected override DependencyObject GetContainerForItemOverride() {
-            return new ListViewItemEx();
-        }
-    }
 }
