@@ -31,9 +31,6 @@ namespace Gabang.Controls {
             base.OnApplyTemplate();
         }
 
-        public JointCollectionGridColumnCollection Columns { get; private set; }
-
-
         private void Bar_Scroll(object sender, ScrollEventArgs e) {
             foreach (var row in _visibleRows) {
                 row.NotifyScroll(e);
@@ -85,8 +82,6 @@ namespace Gabang.Controls {
             }
 
             base.OnItemsSourceChanged(oldValue, newValue);
-
-            Columns = new JointCollectionGridColumnCollection(((GridDataSource)newValue).ColumnCount);
         }
 
         protected override Size MeasureOverride(Size constraint) {

@@ -24,7 +24,7 @@ namespace Gabang.Controls {
 
         public double EstimatedHeight {
             get {
-                return 40;
+                return 20;
             }
         }
 

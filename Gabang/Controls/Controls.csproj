@@ -53,7 +53,6 @@
     <Compile Include="VirtualizingGrid\JointCollectionGrid.cs" />
     <Compile Include="VirtualizingGrid\JointCollectionGridCell.cs" />
     <Compile Include="VirtualizingGrid\JointCollectionGridColumn.cs" />
-    <Compile Include="VirtualizingGrid\JointCollectionGridColumnCollection.cs" />
     <Compile Include="VirtualizingGrid\VirtualizingGridPanel.cs" />
     <Compile Include="VirtualizingGrid\JointCollectionGridRow.cs" />
     <Page Include="Themes\Generic.xaml">
