@@ -12,7 +12,7 @@ namespace Gabang.Controls {
     /// <summary>
     /// Row of <see cref="JointCollectionGrid"/>, which is ItemsControl itself
     /// </summary>
-    public class JointCollectionGridRow : ListBox {
+    public class JointCollectionGridRow : ItemsControl {
         static JointCollectionGridRow() {
             DefaultStyleKeyProperty.OverrideMetadata(typeof(JointCollectionGridRow), new FrameworkPropertyMetadata(typeof(JointCollectionGridRow)));
         }
@@ -25,6 +25,17 @@ namespace Gabang.Controls {
         private ScrollViewer ScrollOwner { get; set; }
 
         internal JointCollectionGrid OwningJointGrid { get; private set; }
+
+        protected override DependencyObject GetContainerForItemOverride() {
+            return new JointCollectionGridCell();
+        }
+
+        protected override void PrepareContainerForItemOverride(DependencyObject element, object item) {
+            base.PrepareContainerForItemOverride(element, item);
+
+            var cell = (JointCollectionGridCell)element;
+            cell.Prepare(OwningJointGrid, item);
+        }
 
         public override void OnApplyTemplate() {
             base.OnApplyTemplate();

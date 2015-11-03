@@ -57,8 +57,8 @@ namespace Gabang.Controls {
         }
 
         protected override void OnItemsSourceChanged(IEnumerable oldValue, IEnumerable newValue) {
-            if (newValue is IList<IList<object>>) {
-                throw new NotSupportedException($"JointGrid supports only joint IList collection of which type is {typeof(IList<IList<object>>)}");
+            if (!(newValue is GridDataSource)) {
+                throw new NotSupportedException($"JointGrid supports only {typeof(GridDataSource)} for ItemsSource");
             }
 
             base.OnItemsSourceChanged(oldValue, newValue);

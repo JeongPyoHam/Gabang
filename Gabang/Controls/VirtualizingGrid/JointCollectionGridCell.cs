@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 
-namespace Gabang.Controls.VirtualizingGrid {
+namespace Gabang.Controls {
     public class JointCollectionGridCell : ContentControl {
 
         private JointCollectionGrid OwningGrid { get; set; }
