@@ -21,7 +21,7 @@ namespace Gabang.TreeGridTest {
         public DataGridWindow() {
             InitializeComponent();
 
-            RootDataGrid.ItemsSource = new GridDataSource(100, 100);
+            RootDataGrid.ItemsSource = new VariableGridDataSource(100, 100);
         }
     }
 }

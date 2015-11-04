@@ -3,8 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 
 namespace Gabang.Controls {
-    public class GridDataSource : ConstantCountList<IntegerList> {  // TODO: change from IntegerList to generic
-        public GridDataSource(int rowCount, int columnCount) : base(rowCount) {
+    public class VariableGridDataSource : ConstantCountList<IntegerList> {  // TODO: change from IntegerList to generic
+        public VariableGridDataSource(int rowCount, int columnCount) : base(rowCount) {
             if (rowCount < 0) {
                 throw new ArgumentOutOfRangeException("rowCount");
             }
@@ -27,7 +27,7 @@ namespace Gabang.Controls {
             }
 
             set {
-                throw new NotSupportedException("GridDataSource is read only");
+                throw new NotSupportedException($"{typeof(VariableGridDataSource)} is read only");
             }
         }
 

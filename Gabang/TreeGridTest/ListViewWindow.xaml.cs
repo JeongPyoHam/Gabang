@@ -21,7 +21,7 @@ namespace Gabang.TreeGridTest {
         public ListViewWindow() {
             InitializeComponent();
 
-            RootListView.ItemsSource = new GridDataSource(100, 100);
+            RootListView.ItemsSource = new VariableGridDataSource(100, 100);
         }
     }
 }
