@@ -44,37 +44,70 @@ namespace Gabang.Controls {
     public class MaxDouble {
         public MaxDouble() { }
         public MaxDouble(double initialValue) {
-            _value = initialValue;
+            _max = initialValue;
         }
 
         [DefaultValue(false)]
         public bool Frozen { get; set; }
 
 
-        double? _value;
-        public double? Value {
+        double? _max;
+        public double? Max {
             get {
-                return _value;
+                return _max;
             }
             set {
                 if (!Frozen) {
-                    if (_value.HasValue && value.HasValue) {
-                        _value = Math.Max(_value.Value, value.Value);
+                    if (_max.HasValue && value.HasValue) {
+                        _max = Math.Max(_max.Value, value.Value);
                     } else {
-                        _value = value;
+                        _max = value;
                     }
                 }
             }
         }
     }
 
-    public interface IVariableGridCellGenerator {
-        int RowCount { get; }
-        int ColumnCount { get; }
+    public class VariableGridCellGenerator {
+        private VariableGridDataSource _dataSource;
 
-        UIElement GenerateAt(int rowIndex, int columnIndex);
+        public VariableGridCellGenerator(VariableGridDataSource dataSource) {
+            _dataSource = dataSource;
+            RowCount = _dataSource.RowCount;
+            ColumnCount = _dataSource.ColumnCount;
 
-        void RemoteAll();
+            elements = new UIElement[RowCount, ColumnCount];
+        }
+
+        public int RowCount { get; }
+
+        public int ColumnCount { get; }
+
+        private UIElement[,] elements;  // TODO: do not use 2D element
+
+        public UIElement GenerateAt(int rowIndex, int columnIndex) {
+            if (rowIndex < 0 || rowIndex >= RowCount) {
+                throw new ArgumentOutOfRangeException("rowIndex");
+            }
+            if (columnIndex < 0 || columnIndex >= ColumnCount) {
+                throw new ArgumentOutOfRangeException("columnIndex");
+            }
+
+            var element = new VariableGridCell();
+            element.Prepare(_dataSource[rowIndex][columnIndex]);
+
+            elements[rowIndex, columnIndex] = element;
+
+            return element;
+        }
+
+        public UIElement GetAt(int rowIndex, int columnIndes) {
+            return elements[rowIndex, columnIndes];
+        }
+
+        public void RemoteAll() {
+
+        }
     }
 
     /// <summary>
@@ -178,7 +211,7 @@ namespace Gabang.Controls {
 
         #endregion
 
-        private IVariableGridCellGenerator Generator { get; set; }
+        private VariableGridCellGenerator Generator { get; set; }
 
         #region Overrides
 
@@ -197,7 +230,7 @@ namespace Gabang.Controls {
             // TODO: get the first row in viewport
             // TODO: get the first column in viewport
 
-            Size desiredSize = Size.Empty;
+            Size desiredSize = new Size();
             do {
                 MeasureRow(firstRowIndex + realizedRowCount, ref desiredSize);
                 realizedRowCount += 1;
@@ -207,33 +240,82 @@ namespace Gabang.Controls {
 
             } while (desiredSize.Width < availableSize.Width || desiredSize.Height < availableSize.Height);
 
-            // mark measure pass
+            // TODO: mark measure pass
 
-            throw new NotImplementedException();
+            return desiredSize;
         }
 
         private void MeasureRow(int index, ref Size desiredSize) {
-            int firstColumnIndex = 0, realizedColumnCount = 0;
-
             MaxDouble height = new MaxDouble();
 
-            for (int i = firstColumnIndex; i < realizedColumnCount; i++) {
+            double width = 0.0;
+            int i = firstColumnIndex;
+            do {
                 UIElement child = Generator.GenerateAt(index, i);
+                AddInternalChild(child);
 
-                Size infinity = new Size(double.PositiveInfinity, (ColumnWidth[i]??new MaxDouble(double.PositiveInfinity)).Value??double.PositiveInfinity);
-                child.Measure(infinity);
+                // TODO: bug. width follows the first element always
+                Size constraint = new Size(double.PositiveInfinity, double.PositiveInfinity);
+                child.Measure(constraint);
 
                 // adjust to desired size
-                ColumnWidth[i].Value = child.DesiredSize.Width;
-                height.Value = child.DesiredSize.Height;
-            }
+                if (!ColumnWidth.ContainsKey(i)) {
+                    ColumnWidth[i] = new MaxDouble();
+                }
+
+                ColumnWidth[i].Max = child.DesiredSize.Width;
+                height.Max = child.DesiredSize.Height;
+
+                width += ColumnWidth[i].Max.Value;
+                i++;
+            } while (i<realizedColumnCount) ;
 
             RowHeight[index] = height;
+
+            desiredSize.Height += height.Max.Value;
+            desiredSize.Width = width;
         }
 
 
         private void MeasureColumn(int index, ref Size desiredSize) {
-            throw new NotImplementedException();
+            MaxDouble width = new MaxDouble();
+
+            double height = 0.0;
+            for (int i = firstRowIndex; i < realizedRowCount; i++) {
+                UIElement child = Generator.GenerateAt(i, index);
+                AddInternalChild(child);
+
+                Size constraint = new Size(double.PositiveInfinity, double.PositiveInfinity);
+                child.Measure(constraint);
+
+                // adjust to desired size
+                RowHeight[i].Max = child.DesiredSize.Width;
+                width.Max = child.DesiredSize.Height;
+
+                height += RowHeight[i].Max.Value;
+            }
+
+            ColumnWidth[index] = width;
+
+            desiredSize.Height = height;
+            desiredSize.Width += width.Max.Value;
+        }
+
+        protected override Size ArrangeOverride(Size finalSize) {
+            double left = 0.0, top = 0.0;
+            for (int r = firstRowIndex; r < realizedRowCount; r++) {
+                left = 0.0;
+                double height = RowHeight[r].Max.Value;
+                for (int c = firstColumnIndex; c < realizedColumnCount; c++) {
+                    var element = Generator.GetAt(r, c);
+                    double width = ColumnWidth[c].Max.Value;
+                    element.Arrange(new Rect(left, top, width, height));
+                    left += width;
+                }
+                top += height;
+            }
+
+            return new Size(left, top);
         }
 
         #endregion
@@ -250,6 +332,11 @@ namespace Gabang.Controls {
                 throw new NotSupportedException($"{typeof(VariableGridPanel2)} supports only ItemsPanel. Can't use stand alone");
             }
             OwningItemsControl = owningItemsControl;
+
+            if (!(owningItemsControl is VariableGrid)) {
+                throw new NotSupportedException($"{typeof(VariableGridPanel2)} supports only {typeof(VariableGrid)}'s ItemsPanel");
+            }
+            this.Generator = ((VariableGrid)owningItemsControl).Generator;
 
             if (ScrollOwner == null) {
                 throw new NotSupportedException($"{typeof(VariableGridPanel2)} must be used for top level scrolling panel");

@@ -19,8 +19,13 @@ namespace Gabang.Controls {
             this.Content = item;
         }
 
+        internal void Prepare(object item) {
+            this.Content = item;
+        }
+
         protected override Size MeasureOverride(Size constraint) {
-            return new Size(70, _row.EstimatedHeight);
+            //return new Size(70,  _row.EstimatedHeight);
+            return base.MeasureOverride(constraint);
         }
     }
 }

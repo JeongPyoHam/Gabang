@@ -55,6 +55,8 @@ namespace Gabang.Controls {
             bar.Scroll += Bar_Scroll;
         }
 
+        public VariableGridCellGenerator Generator { get; set; }
+
         #region override
 
         protected override DependencyObject GetContainerForItemOverride() {
@@ -85,6 +87,8 @@ namespace Gabang.Controls {
             }
 
             base.OnItemsSourceChanged(oldValue, newValue);
+
+            this.Generator = new VariableGridCellGenerator((VariableGridDataSource)newValue);
         }
 
         protected override Size MeasureOverride(Size constraint) {
@@ -95,4 +99,5 @@ namespace Gabang.Controls {
 
         #endregion override
     }
+
 }

@@ -155,14 +155,19 @@
         
     <Style x:Key="{x:Type local:VariableGrid}" TargetType="{x:Type local:VariableGrid}">
         <Setter Property="ScrollViewer.CanContentScroll" Value="true"/>
+        <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel"/>
+        <Setter Property="VirtualizingPanel.CacheLength" Value="10"/>
+        <Setter Property="VirtualizingPanel.CacheLengthUnit" Value="Pixel"/>
+        <Setter Property="VirtualizingPanel.IsVirtualizing" Value="true"/>
         <Setter Property="ItemsPanel">
             <Setter.Value>
                 <ItemsPanelTemplate>
-                    <local:VariableGridPanel Orientation="Vertical" IsVirtualizing="true"
+                    <local:VariableGridPanel2>
+                    </local:VariableGridPanel2>
+                    <!--<local:VariableGridPanel Orientation="Vertical" IsVirtualizing="true"
                                                  VirtualizingPanel.ScrollUnit="Pixel"
                                                  VirtualizingPanel.CacheLength="10">
-                        
-                    </local:VariableGridPanel>
+                    </local:VariableGridPanel>-->
                 </ItemsPanelTemplate>
             </Setter.Value>
         </Setter>
