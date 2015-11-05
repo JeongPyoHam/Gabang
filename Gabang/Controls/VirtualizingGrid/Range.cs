@@ -6,7 +6,27 @@ using System.Threading.Tasks;
 
 namespace Gabang.Controls {
     public struct Range {
-        public int Start { get; set; }
-        public int Count { get; set; }
+        private int _start;
+        private int _count;
+        private int _end;
+
+        public int Start {
+            get { return _start; }
+            set {
+                _start = value;
+                _end = _start + _count;
+            }
+        }
+        public int Count {
+            get { return _count; }
+            set {
+                _count = value;
+                _end = _start + _count;
+            }
+        }
+
+        public bool Contains(int value) {
+            return (value >= _start) && (value < _end);
+        }
     }
 }

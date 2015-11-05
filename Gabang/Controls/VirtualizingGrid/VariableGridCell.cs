@@ -11,6 +11,9 @@ namespace Gabang.Controls {
 
         private VariableGridRow _row;
 
+        public int Row { get; set; }
+
+        public int Column { get; set; }
 
         internal void Prepare(VariableGridRow owningRow, object item) {
             _row = owningRow;

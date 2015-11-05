@@ -76,16 +76,16 @@ namespace Gabang.Controls {
             RowCount = _dataSource.RowCount;
             ColumnCount = _dataSource.ColumnCount;
 
-            elements = new UIElement[RowCount, ColumnCount];
+            elements = new VariableGridCell[RowCount, ColumnCount];
         }
 
         public int RowCount { get; }
 
         public int ColumnCount { get; }
 
-        private UIElement[,] elements;  // TODO: do not use 2D element
+        private VariableGridCell[,] elements;  // TODO: do not use 2D element
 
-        public UIElement GenerateAt(int rowIndex, int columnIndex) {
+        public VariableGridCell GenerateAt(int rowIndex, int columnIndex) {
             if (rowIndex < 0 || rowIndex >= RowCount) {
                 throw new ArgumentOutOfRangeException("rowIndex");
             }
@@ -93,15 +93,23 @@ namespace Gabang.Controls {
                 throw new ArgumentOutOfRangeException("columnIndex");
             }
 
-            var element = new VariableGridCell();
+            var element = GetAt(rowIndex, columnIndex);
+            if (element != null) {
+                return element;
+            }
+
+            element = new VariableGridCell();
             element.Prepare(_dataSource[rowIndex][columnIndex]);
 
             elements[rowIndex, columnIndex] = element;
 
+            element.Row = rowIndex;
+            element.Column = columnIndex;
+
             return element;
         }
 
-        public UIElement GetAt(int rowIndex, int columnIndes) {
+        public VariableGridCell GetAt(int rowIndex, int columnIndes) {
             return elements[rowIndex, columnIndes];
         }
 
@@ -227,10 +235,8 @@ namespace Gabang.Controls {
         int _realizedColumnIndex = 0;
         int _realizedColumnCount = 0;
 
-        int _viewpointRowIndex = 0;
-        int _viewpointRowCount = 0;
-        int _viewpointColumnIndex = 0;
-        int _viewpointColumnCount = 0;
+        Range _viewportRow = new Range();
+        Range _viewportColumn = new Range();
 
         Dictionary<int, MaxDouble> RowHeight = new Dictionary<int, MaxDouble>();
         Dictionary<int, MaxDouble> ColumnWidth = new Dictionary<int, MaxDouble>();
@@ -243,8 +249,8 @@ namespace Gabang.Controls {
             int rowIndex = (int)VerticalOffset;
             int columnIndex = (int)HorizontalOffset;
 
-            _viewpointRowIndex = rowIndex;
-            _viewpointColumnIndex = columnIndex;
+            _viewportRow.Start = rowIndex;
+            _viewportColumn.Start = columnIndex;
 
             // TODO: assume intersect left top corner
             Size desiredSize = GetIntersectSize(rowIndex, columnIndex, out rowIndex, out columnIndex);
@@ -266,8 +272,8 @@ namespace Gabang.Controls {
                 } while (!IsBiggerThan(desiredSize, availableSize));
             }
 
-            _viewpointRowCount = rowIndex - _viewpointRowIndex;
-            _viewpointColumnCount = columnIndex - _viewpointColumnIndex;
+            _viewportRow.Count = rowIndex - _viewportRow.Start;
+            _viewportColumn.Count = columnIndex - _viewportColumn.Start;
 
             // TODO: mark measure pass
             UpdateScrollInfo();
@@ -319,7 +325,7 @@ namespace Gabang.Controls {
             MaxDouble height = new MaxDouble();
 
             double width = 0.0;
-            int column = _viewpointColumnIndex;
+            int column = _viewportColumn.Start;
             do {
                 UIElement child = Generator.GenerateAt(index, column);
                 AddInternalChild(child);
@@ -355,7 +361,7 @@ namespace Gabang.Controls {
             MaxDouble width = new MaxDouble();
 
             double height = 0.0;
-            int row = _viewpointRowIndex;
+            int row = _viewportRow.Start;
             do {
                 UIElement child = Generator.GenerateAt(row, index);
                 AddInternalChild(child);
@@ -387,10 +393,10 @@ namespace Gabang.Controls {
 
         protected override Size ArrangeOverride(Size finalSize) {
             double left = 0.0, top = 0.0;
-            for (int r = _viewpointRowIndex; r < (_viewpointRowIndex + _viewpointRowCount); r++) {
+            for (int r = _viewportRow.Start; r < (_viewportRow.Start + _viewportRow.Count); r++) {
                 left = 0.0;
                 double height = RowHeight[r].Max.Value;
-                for (int c = _viewpointColumnIndex; c < (_viewpointColumnIndex + _viewpointColumnCount); c++) {
+                for (int c = _viewportColumn.Start; c < (_viewportColumn.Start + _viewportColumn.Count); c++) {
                     var element = Generator.GetAt(r, c);
                     double width = ColumnWidth[c].Max.Value;
                     element.Arrange(new Rect(left, top, width, height));
