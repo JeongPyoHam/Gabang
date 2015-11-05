@@ -31,10 +31,6 @@ namespace Gabang.Controls {
             }
         }
 
-        public override bool Contains(IntegerList item) {
-            return IndexOf(item) != -1;
-        }
-
         public override int IndexOf(IntegerList item) {
             if (item.Start >= 0 && item.Count == ColumnCount) {
                 int remainder;

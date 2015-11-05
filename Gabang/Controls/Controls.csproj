@@ -48,7 +48,9 @@
     <Compile Include="BooleanToVisibilityConverter.cs" />
     <Compile Include="DummyControl.cs" />
     <Compile Include="VirtualizingGrid\ConstantCountList.cs" />
+    <Compile Include="VirtualizingGrid\ConstantList.cs" />
     <Compile Include="VirtualizingGrid\IntegerList.cs" />
+    <Compile Include="VirtualizingGrid\Range.cs" />
     <Compile Include="VirtualizingGrid\VariableGridDataSource.cs" />
     <Compile Include="VirtualizingGrid\VariableGrid.cs" />
     <Compile Include="VirtualizingGrid\VariableGridCell.cs" />

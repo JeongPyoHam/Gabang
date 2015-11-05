@@ -186,19 +186,25 @@ namespace Gabang.Controls {
         }
 
         public void SetHorizontalOffset(double offset) {
-            throw new NotImplementedException();
+            if (offset >= 0 && offset < ExtentWidth) {
+                HorizontalOffset = offset;
+                InvalidateMeasure();    // TODO: if IsVirtualizing==false, InvalidaArrange() should be enough
+            }
         }
 
         public void SetVerticalOffset(double offset) {
-            throw new NotImplementedException();
+            if (offset >= 0 && offset < ExtentWidth) {
+                VerticalOffset = offset;
+                InvalidateMeasure();
+            }
         }
 
         private double GetLineDelta(Orientation orientation) {
-            throw new NotImplementedException();
+            return 1.0; // TODO: change to pixed based!
         }
 
         private double GetPageDelta(Orientation orientation) {
-            throw new NotImplementedException();
+            return 10.0;
         }
 
         private double GetMouseWheelDelta(Orientation orientation) {
@@ -215,11 +221,16 @@ namespace Gabang.Controls {
 
         #region Overrides
 
-        int firstRowIndex = 0;  // TODO: bogus value
-        int realizedRowCount = 0;
+        int _realizedRowIndex = 0;  // TODO: bogus value
+        int _realizedRowCount = 0;
 
-        int firstColumnIndex = 0;
-        int realizedColumnCount = 0;
+        int _realizedColumnIndex = 0;
+        int _realizedColumnCount = 0;
+
+        int _viewpointRowIndex = 0;
+        int _viewpointRowCount = 0;
+        int _viewpointColumnIndex = 0;
+        int _viewpointColumnCount = 0;
 
         Dictionary<int, MaxDouble> RowHeight = new Dictionary<int, MaxDouble>();
         Dictionary<int, MaxDouble> ColumnWidth = new Dictionary<int, MaxDouble>();
@@ -229,51 +240,114 @@ namespace Gabang.Controls {
 
             // TODO: get the first row in viewport
             // TODO: get the first column in viewport
+            int rowIndex = (int)VerticalOffset;
+            int columnIndex = (int)HorizontalOffset;
 
-            Size desiredSize = new Size();
-            do {
-                MeasureRow(firstRowIndex + realizedRowCount, ref desiredSize);
-                realizedRowCount += 1;
+            _viewpointRowIndex = rowIndex;
+            _viewpointColumnIndex = columnIndex;
 
-                MeasureColumn(firstColumnIndex + realizedColumnCount, ref desiredSize);
-                realizedColumnCount += 1;
+            // TODO: assume intersect left top corner
+            Size desiredSize = GetIntersectSize(rowIndex, columnIndex, out rowIndex, out columnIndex);
 
-            } while (desiredSize.Width < availableSize.Width || desiredSize.Height < availableSize.Height);
+            if (!IsBiggerThan(desiredSize, availableSize)) {
+                do {
+                    if (desiredSize.Height < availableSize.Height) {
+                        MeasureRow(rowIndex, ref desiredSize);
+                        rowIndex++;
+                        if (columnIndex == 0) { // TODO: hack!!
+                            columnIndex++;
+                        }
+                    }
+
+                    if (desiredSize.Width < availableSize.Width) {
+                        MeasureColumn(columnIndex, ref desiredSize);
+                        columnIndex++;
+                    }
+                } while (!IsBiggerThan(desiredSize, availableSize));
+            }
+
+            _viewpointRowCount = rowIndex - _viewpointRowIndex;
+            _viewpointColumnCount = columnIndex - _viewpointColumnIndex;
 
             // TODO: mark measure pass
+            UpdateScrollInfo();
 
             return desiredSize;
+        }
+
+        private Size GetIntersectSize(int rowIndex, int columnIndex, out int rowIntersectLimit, out int columnIntersectLimit) {
+            Size interSect = new Size();
+
+            double height = 0.0;
+            int r = Math.Max(rowIndex, _realizedRowIndex);
+            while (r < (_realizedRowIndex + _realizedRowCount)) {
+                height += RowHeight[r].Max.Value;
+                r++;
+            }
+
+            double width = 0.0;
+            int c = Math.Max(columnIndex, _realizedColumnIndex);
+            while (c < (_realizedColumnIndex + _realizedColumnCount)) {
+                width += ColumnWidth[c].Max.Value;
+                c++;
+            }
+
+            interSect.Height = height;
+            interSect.Width = width;
+
+            rowIntersectLimit = r;
+            columnIntersectLimit = c;
+
+            return interSect;
+        }
+
+        private bool IsBiggerThan(Size left, Size right) {
+            return (left.Width >= right.Width) && (left.Height >= right.Height);
+        }
+
+        private void UpdateScrollInfo() {
+            if (Generator != null) {
+                ExtentWidth = Generator.ColumnCount;
+                ExtentHeight = Generator.RowCount;
+                ViewportWidth = 1;
+                ViewportHeight = 1;
+                ScrollOwner?.InvalidateScrollInfo();
+            }
         }
 
         private void MeasureRow(int index, ref Size desiredSize) {
             MaxDouble height = new MaxDouble();
 
             double width = 0.0;
-            int i = firstColumnIndex;
+            int column = _viewpointColumnIndex;
             do {
-                UIElement child = Generator.GenerateAt(index, i);
+                UIElement child = Generator.GenerateAt(index, column);
                 AddInternalChild(child);
 
                 // TODO: bug. width follows the first element always
                 Size constraint = new Size(double.PositiveInfinity, double.PositiveInfinity);
                 child.Measure(constraint);
 
-                // adjust to desired size
-                if (!ColumnWidth.ContainsKey(i)) {
-                    ColumnWidth[i] = new MaxDouble();
+                if (!ColumnWidth.ContainsKey(column)) {
+                    ColumnWidth[column] = new MaxDouble();
                 }
 
-                ColumnWidth[i].Max = child.DesiredSize.Width;
+                ColumnWidth[column].Max = child.DesiredSize.Width;
                 height.Max = child.DesiredSize.Height;
 
-                width += ColumnWidth[i].Max.Value;
-                i++;
-            } while (i<realizedColumnCount) ;
+                width += ColumnWidth[column].Max.Value;
+                column++;
+            } while (column < _realizedColumnCount) ;
 
             RowHeight[index] = height;
 
             desiredSize.Height += height.Max.Value;
             desiredSize.Width = width;
+
+            _realizedRowCount++;
+            if (_realizedColumnCount == 0) {
+                _realizedColumnCount++;
+            }
         }
 
 
@@ -281,32 +355,42 @@ namespace Gabang.Controls {
             MaxDouble width = new MaxDouble();
 
             double height = 0.0;
-            for (int i = firstRowIndex; i < realizedRowCount; i++) {
-                UIElement child = Generator.GenerateAt(i, index);
+            int row = _viewpointRowIndex;
+            do {
+                UIElement child = Generator.GenerateAt(row, index);
                 AddInternalChild(child);
 
                 Size constraint = new Size(double.PositiveInfinity, double.PositiveInfinity);
                 child.Measure(constraint);
 
-                // adjust to desired size
-                RowHeight[i].Max = child.DesiredSize.Width;
+                if (!RowHeight.ContainsKey(row)) {
+                    RowHeight[row] = new MaxDouble();
+                }
+
+                RowHeight[row].Max = child.DesiredSize.Width;
                 width.Max = child.DesiredSize.Height;
 
-                height += RowHeight[i].Max.Value;
-            }
+                height += RowHeight[row].Max.Value;
+                row++;
+            } while (row < _realizedRowCount);
 
             ColumnWidth[index] = width;
 
             desiredSize.Height = height;
             desiredSize.Width += width.Max.Value;
+
+            _realizedColumnCount++;
+            if (_realizedRowCount == 0) {
+                _realizedRowCount++;
+            }
         }
 
         protected override Size ArrangeOverride(Size finalSize) {
             double left = 0.0, top = 0.0;
-            for (int r = firstRowIndex; r < realizedRowCount; r++) {
+            for (int r = _viewpointRowIndex; r < (_viewpointRowIndex + _viewpointRowCount); r++) {
                 left = 0.0;
                 double height = RowHeight[r].Max.Value;
-                for (int c = firstColumnIndex; c < realizedColumnCount; c++) {
+                for (int c = _viewpointColumnIndex; c < (_viewpointColumnIndex + _viewpointColumnCount); c++) {
                     var element = Generator.GetAt(r, c);
                     double width = ColumnWidth[c].Max.Value;
                     element.Arrange(new Rect(left, top, width, height));

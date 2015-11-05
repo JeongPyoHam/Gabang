@@ -8,12 +8,17 @@ namespace Gabang.Controls {
     /// </summary>
     /// <typeparam name="T">item type</typeparam>
     public abstract class ConstantCountList<T> : IList<T>, IList {
-        public ConstantCountList(int count) {
+        public ConstantCountList(int count) : this(0, count) { }
+
+        public ConstantCountList(int startIndex, int count) {
             if (count < 0) {
                 throw new ArgumentOutOfRangeException("count");
             }
+            this.StartIndex = startIndex;
             this.Count = count;
         }
+
+        public int StartIndex { get; private set; }
 
         public abstract T this[int index] { get; set; }
 
@@ -53,7 +58,9 @@ namespace Gabang.Controls {
             return Contains((T)value);
         }
 
-        public abstract bool Contains(T item);
+        public bool Contains(T item) {
+            return IndexOf(item) != -1;
+        }
 
         public void CopyTo(Array array, int index) {
             if (array == null) {
