@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,21 +11,14 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using Gabang.Controls;
 
 namespace Gabang.TreeGridTest {
     /// <summary>
-    /// Interaction logic for GridWindow.xaml
+    /// Interaction logic for TreeViewWindow.xaml
     /// </summary>
-    public partial class GridWindow : Window {
-
-        public static int RowCount = 100;
-        public static int ColumnCount = 100;
-
-        public GridWindow() {
+    public partial class TreeViewWindow : Window {
+        public TreeViewWindow() {
             InitializeComponent();
-
-            this.VGrid.ItemsSource = new VariableGridDataSource(RowCount, ColumnCount);
         }
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -35,6 +36,8 @@ namespace Gabang.Controls {
             foreach (var row in _visibleRows) {
                 row.NotifyScroll(e);
             }
+
+            Debug.WriteLine($"Horizontal ScrollBar: Row count({_visibleRows.Count})");
         }
 
         List<VariableGridRow> _visibleRows = new List<VariableGridRow>();
