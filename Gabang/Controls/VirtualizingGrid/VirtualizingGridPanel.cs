@@ -1,154 +1,30 @@
-﻿using System;
+﻿//#define PRINT
+//#define ASSERT
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace Gabang.Controls {
-
-    /// <summary>
-    /// a panel(vertical) of row panel(horizontal)
-    /// send horizontal scroll to each row panel
-    /// 
-    /// item generation (virtualization) should be synchronized, too
-    /// column item layout should be synchronized, too
-    /// 
-    /// </summary>
-    public class VariableGridPanel : VirtualizingStackPanel, IScrollInfo {
-
-        protected override Size MeasureOverride(Size constraint) {
-            var desired = base.MeasureOverride(constraint);
-
-            //SetScrollInfo();
-
-            return desired;
-        }
-
-        public IScrollInfo ChildScrollInfo { get; private set; }
-
-        private void SetScrollInfo() {
-            if (Children.Count > 0) {
-                var childPanel = Children[0] as VirtualizingStackPanel;
-                if (childPanel != null) {
-                    ChildScrollInfo = childPanel;
-                }
-            }
-        }
-    }
-
-    public class MaxDouble {
-        public MaxDouble() { }
-        public MaxDouble(double initialValue) {
-            _max = initialValue;
-        }
-
-        [DefaultValue(false)]
-        public bool Frozen { get; set; }
-
-
-        double? _max;
-        public double? Max {
-            get {
-                return _max;
-            }
-            set {
-                if (!Frozen) {
-                    if (_max.HasValue && value.HasValue) {
-                        _max = Math.Max(_max.Value, value.Value);
-                    } else {
-                        _max = value;
-                    }
-                }
-            }
-        }
-    }
-
-    public class VariableGridCellGenerator {
-        private VariableGridDataSource _dataSource;
-
-        public VariableGridCellGenerator(VariableGridDataSource dataSource) {
-            _dataSource = dataSource;
-            RowCount = _dataSource.RowCount;
-            ColumnCount = _dataSource.ColumnCount;
-
-            elements = new VariableGridCell[RowCount, ColumnCount];
-        }
-
-        public int RowCount { get; }
-
-        public int ColumnCount { get; }
-
-        private VariableGridCell[,] elements;  // TODO: do not use 2D element
-
-        public VariableGridCell GenerateAt(int rowIndex, int columnIndex) {
-            if (rowIndex < 0 || rowIndex >= RowCount) {
-                throw new ArgumentOutOfRangeException("rowIndex");
-            }
-            if (columnIndex < 0 || columnIndex >= ColumnCount) {
-                throw new ArgumentOutOfRangeException("columnIndex");
-            }
-
-            var element = GetAt(rowIndex, columnIndex);
-            if (element != null) {
-                return element;
-            }
-
-            element = new VariableGridCell();
-            element.Prepare(_dataSource[rowIndex][columnIndex]);
-
-            elements[rowIndex, columnIndex] = element;
-
-            element.Row = rowIndex;
-            element.Column = columnIndex;
-
-            return element;
-        }
-
-        public VariableGridCell GetAt(int rowIndex, int columnIndes) {
-            return elements[rowIndex, columnIndes];
-        }
-
-        public void RemoveAt(int rowIndex, int columnIndex) {
-            elements[rowIndex, columnIndex] = null; // TODO: give a chance each element to clean up such as unregistering event handler
-        }
-
-        public void RemoveColumn(int column) {
-            for (int r = 0; r < RowCount; r++) {
-                RemoveAt(r, column);
-            }
-        }
-
-        public void RemoveRow(int row) {
-            for (int c = 0; c < ColumnCount; c++) {
-                RemoveAt(row, c);
-            }
-        }
-
-        public void RemoteAll() {
-            for (int r = 0; r < RowCount; r++) {
-                RemoveRow(r);
-            }
-        }
-    }
-
-    [Flags]
-    enum ScrollHint {
-        None = 0x00,
-        Horizontal = 0x01,
-        Vertial = 0x02,
-    }
-
     /// <summary>
     /// assumes, IsVirtualizing = true, VirtualizationMode = Standard, ScrollUnit = Pixel, CacheLength = 1, CacheLengthUnit = Item
     /// </summary>
     public class VariableGridPanel2 : VirtualizingPanel, IScrollInfo {
         #region IScrollInfo
+
+        [Flags]
+        enum ScrollHint {
+            None = 0x00,
+            Horizontal = 0x01,
+            Vertial = 0x02,
+        }
 
         [DefaultValue(false)]
         public bool CanHorizontallyScroll { get; set; }
@@ -221,7 +97,14 @@ namespace Gabang.Controls {
         private ScrollHint _scrollHint = ScrollHint.None;
 
         public void SetHorizontalOffset(double offset) {
-            if (offset >= 0 && offset < ExtentWidth) {  // TODO: subtract the viewport size
+            if (offset > ExtentWidth - ViewportWidth) {
+                offset = ExtentWidth - ViewportWidth;
+            }
+            if (offset < 0) {
+                offset = 0;
+            }
+
+            if (HorizontalOffset != offset) {
                 _scrollHint |= ScrollHint.Horizontal;
                 HorizontalOffset = offset;
                 InvalidateMeasure();    // TODO: if IsVirtualizing==false, InvalidaArrange() should be enough
@@ -229,7 +112,14 @@ namespace Gabang.Controls {
         }
 
         public void SetVerticalOffset(double offset) {
-            if (offset >= 0 && offset < ExtentWidth) {
+            if (offset > ExtentHeight - ViewportHeight) {
+                offset = ExtentHeight - ViewportHeight;
+            }
+            if (offset < 0) {
+                offset = 0;
+            }
+
+            if (VerticalOffset != offset) {
                 _scrollHint |= ScrollHint.Vertial;
                 VerticalOffset = offset;
                 InvalidateMeasure();
@@ -254,15 +144,7 @@ namespace Gabang.Controls {
 
         #endregion
 
-        private VariableGridCellGenerator Generator { get; set; }
-
         #region Overrides
-
-        int _realizedRowIndex = 0;  // TODO: bogus value
-        int _realizedRowCount = 0;
-
-        int _realizedColumnIndex = 0;
-        int _realizedColumnCount = 0;
 
         Range _lastMeasureViewportRow = new Range();
         Range _lastMeasureViewportColumn = new Range();
@@ -284,22 +166,26 @@ namespace Gabang.Controls {
             Range viewportColumn = new Range();
             viewportColumn.Start = columnIndex;
 
+            int horizontalGrowth = 1;
+            int verticalGrowth = 1;
+
             Size desiredSize = MeasureChild(viewportRow.Start, viewportColumn.Start);
-            viewportRow.Count++;
-            rowIndex++;
-            viewportColumn.Count++;
-            columnIndex++;
+            viewportRow.Count += verticalGrowth;
+            rowIndex += verticalGrowth;
+            viewportColumn.Count += horizontalGrowth;
+            columnIndex += horizontalGrowth;
 
             bool isRow = _scrollHint.HasFlag(ScrollHint.Vertial);
-            while (!IsBiggerThan(desiredSize, availableSize)) {
+            while ((horizontalGrowth != 0 || verticalGrowth != 0)
+                && (rowIndex != Generator.RowCount || columnIndex != Generator.ColumnCount)) {
                 if (isRow) {
-                    int growth = GrowVertically(rowIndex, availableSize.Height, ref desiredSize, ref viewportColumn);
-                    viewportRow.Count += growth;
-                    rowIndex += growth;
+                    verticalGrowth = GrowVertically(rowIndex, availableSize.Height, ref desiredSize, ref viewportColumn);
+                    viewportRow.Count += verticalGrowth;
+                    rowIndex += verticalGrowth;
                 } else {
-                    int growth = GrowHorizontally(columnIndex, availableSize.Width, ref desiredSize, ref viewportRow);
-                    viewportColumn.Count += growth;
-                    columnIndex += growth;
+                    horizontalGrowth = GrowHorizontally(columnIndex, availableSize.Width, ref desiredSize, ref viewportRow);
+                    viewportColumn.Count += horizontalGrowth;
+                    columnIndex += horizontalGrowth;
                 }
 
                 isRow ^= true;  // toggle
@@ -314,103 +200,6 @@ namespace Gabang.Controls {
             Debug.WriteLine("VirtualizingGridPanel:Measure: {0} msec", (DateTime.Now - startTime).TotalMilliseconds);
 #endif
             return desiredSize;
-        }
-
-        private Range FindFirstChildrenRangeOutsideViewport(ref int start) {
-            Range firstBlock = new Range();
-            int begin = start == -1 ? InternalChildren.Count - 1 : start;
-            for (int i = begin; i >= 0; i--) {
-                VariableGridCell child = (VariableGridCell) InternalChildren[i];
-
-                if (!_lastMeasureViewportRow.Contains(child.Row)
-                    || !_lastMeasureViewportColumn.Contains(child.Column)) {
-                    if (firstBlock.Count == 0) {
-                        firstBlock.Start = i;
-                    }
-                    firstBlock.Count++;
-                } else {
-                    if (firstBlock.Count != 0) {
-                        start = i;
-                        break;
-                    }
-                }
-            }
-            return firstBlock;
-        }
-
-        private void Clean() {
-#if DEBUG
-            DateTime startTime = DateTime.Now;
-#endif
-            int begin = -1;
-            while (true) {
-                Range cleanBlock = FindFirstChildrenRangeOutsideViewport(ref begin);
-
-                if (cleanBlock.Count == 0) {
-                    break;
-                }
-
-                // hack
-                RemoveInternalChildRange(cleanBlock.Start - cleanBlock.Count + 1, cleanBlock.Count);
-            }
-
-            var rowsOutsideViewport = RowHeight.Keys.Where(key => !_lastMeasureViewportRow.Contains(key)).ToList();
-            foreach (var row in rowsOutsideViewport) {
-                RowHeight.Remove(row);
-                Generator.RemoveRow(row);
-            }
-
-            var columnsOutsideViewport = ColumnWidth.Keys.Where(key => !_lastMeasureViewportColumn.Contains(key)).ToList();
-            foreach (var column in columnsOutsideViewport) {
-                ColumnWidth.Remove(column);
-                Generator.RemoveColumn(column);
-            }
-
-            // freeze remaining row and columns
-            foreach (var rowHeight in RowHeight) {
-                if (rowHeight.Value.Max.HasValue) {
-                    rowHeight.Value.Frozen = true;
-                }
-            }
-
-            foreach (var columnWidth in ColumnWidth) {
-                if (columnWidth.Value.Max.HasValue) {
-                    columnWidth.Value.Frozen = true;
-                }
-            }
-#if DEBUG
-            Debug.WriteLine("VirtualizingGridPanel:Clean: {0} msec", (DateTime.Now - startTime).TotalMilliseconds);
-#endif
-        }
-
-        private Size GetIntersectSize(int rowIndex, int columnIndex, out int rowIntersectLimit, out int columnIntersectLimit) {
-            Size interSect = new Size();
-
-            double height = 0.0;
-            int r = Math.Max(rowIndex, _realizedRowIndex);
-            while (r < (_realizedRowIndex + _realizedRowCount)) {
-                height += RowHeight[r].Max.Value;
-                r++;
-            }
-
-            double width = 0.0;
-            int c = Math.Max(columnIndex, _realizedColumnIndex);
-            while (c < (_realizedColumnIndex + _realizedColumnCount)) {
-                width += ColumnWidth[c].Max.Value;
-                c++;
-            }
-
-            interSect.Height = height;
-            interSect.Width = width;
-
-            rowIntersectLimit = r;
-            columnIntersectLimit = c;
-
-            return interSect;
-        }
-
-        private bool IsBiggerThan(Size left, Size right) {
-            return (left.Width >= right.Width) && (left.Height >= right.Height);
         }
 
         private void UpdateScrollInfo() {
@@ -428,13 +217,17 @@ namespace Gabang.Controls {
         private Size MeasureChild(int row, int column) {
             if (_lastMeasureViewportRow.Contains(row) && _lastMeasureViewportColumn.Contains(column)) {
                 Debug.Assert(RowHeight.ContainsKey(row) && ColumnWidth.ContainsKey(column));
-                Debug.Assert(Generator.GetAt(row, column) != null);
 
                 // TODO: measure again? maybe, not
                 return new Size(ColumnWidth[column].Max.Value, RowHeight[row].Max.Value);
             } else {
-                var child = Generator.GenerateAt(row, column);
-                AddInternalChild(child);
+                bool newlyCreated;
+                var child = Generator.GenerateAt(row, column, out newlyCreated);
+                if (newlyCreated) {
+                    AddInternalChild(child);
+                } else {
+                    Debug.Assert(InternalChildren.Contains(child));
+                }
 
                 bool updateWidth = true; double widthConstraint = double.PositiveInfinity;
                 if (!ColumnWidth.ContainsKey(column)) {
@@ -465,10 +258,9 @@ namespace Gabang.Controls {
             }
         }
 
-        // returns growth
         private int GrowVertically(int row, double extent, ref Size desiredSize, ref Range viewportColumn) {
             int growth = 0;
-            while (desiredSize.Height < extent) {
+            while ((desiredSize.Height < extent) && ((row + growth) < Generator.RowCount)) {
                 MeasureRow(row + growth, ref desiredSize, ref viewportColumn);
                 growth += 1;
             }
@@ -478,22 +270,21 @@ namespace Gabang.Controls {
         private void MeasureRow(int row, ref Size desiredSize, ref Range viewportColumn) {
             double width = 0.0;
             int column = viewportColumn.Start;
-            do {
+            while (viewportColumn.Contains(column) && column < Generator.ColumnCount) {
                 Size childDesiredSize = MeasureChild(row, column);
 
                 width += childDesiredSize.Width;
 
                 column++;
-            } while (viewportColumn.Contains(column)) ;
+            }
 
             desiredSize.Height += RowHeight[row].Max.Value;
             desiredSize.Width = width;
         }
 
-        // returns growth
         private int GrowHorizontally(int column, double extent, ref Size desiredSize, ref Range viewportRow) {
             int growth = 0;
-            while (desiredSize.Width < extent) {
+            while ((desiredSize.Width < extent) && ((column + growth) < Generator.ColumnCount)) {
                 MeasureColumn(column + growth, ref desiredSize, ref viewportRow);
                 growth += 1;
             }
@@ -502,13 +293,13 @@ namespace Gabang.Controls {
         private void MeasureColumn(int column, ref Size desiredSize, ref Range viewportRow) {
             double height = 0.0;
             int row = viewportRow.Start;
-            do {
+            while (viewportRow.Contains(row) && row < Generator.RowCount) {
                 Size childDesiredSize = MeasureChild(row, column);
 
                 height += childDesiredSize.Height;
 
                 row++;
-            } while (viewportRow.Contains(row));
+            }
 
             desiredSize.Height = height;
             desiredSize.Width += ColumnWidth[column].Max.Value;
@@ -544,12 +335,129 @@ namespace Gabang.Controls {
 #if DEBUG
             Debug.WriteLine("VirtualizingGridPanel:Arrange(except Clean): {0} msec", (DateTime.Now - startTime).TotalMilliseconds);
 #endif
-            Clean();    // TODO: do this in background job
+            PostArrange();    // TODO: do this in background job
 
             return finalSize;
         }
 
+#endregion
+
+        #region Clean Up
+
+        private void PostArrange() {
+#if DEBUG
+            DateTime startTime = DateTime.Now;
+#endif
+            EnsureCleanupOperation();
+
+            // freeze remaining row and columns
+            foreach (var rowHeight in RowHeight) {
+                if (rowHeight.Value.Max.HasValue) {
+                    rowHeight.Value.Frozen = true;
+                }
+            }
+
+            foreach (var columnWidth in ColumnWidth) {
+                if (columnWidth.Value.Max.HasValue) {
+                    columnWidth.Value.Frozen = true;
+                }
+            }
+#if DEBUG
+            Debug.WriteLine("VirtualizingGridPanel:PostArrange: {0} msec", (DateTime.Now - startTime).TotalMilliseconds);
+#endif
+        }
+
+        private DispatcherOperation _cleanupOperation;
+
+        private void EnsureCleanupOperation() {
+            if (_cleanupOperation == null) {
+                _cleanupOperation = Dispatcher.BeginInvoke(DispatcherPriority.Background, new DispatcherOperationCallback(OnCleanUp), null);
+            }
+        }
+
+        private object OnCleanUp(object args) {
+            try {
+#if DEBUG
+                DateTime startTime = DateTime.Now;
+#endif
+                int begin = -1;
+                while (true) {
+                    Range cleanBlock = FindFirstChildrenRangeOutsideViewport(ref begin);
+
+                    if (cleanBlock.Count == 0) {
+                        break;
+                    }
+
+                    for (int i = 0; i < cleanBlock.Count; i++) {
+                        var child = (VariableGridCell) InternalChildren[cleanBlock.Start + i];
+                        bool removed = Generator.RemoveAt(child.Row, child.Column);
+
+                        Debug.Assert(removed);
+                    }
+                    RemoveInternalChildRange(cleanBlock.Start, cleanBlock.Count);
+                }
+
+                // TODO: move to clean up task, or create Row Column cache
+                var rowsOutsideViewport = RowHeight.Keys.Where(key => !_lastMeasureViewportRow.Contains(key)).ToList();
+                foreach (var row in rowsOutsideViewport) {
+                    RowHeight.Remove(row);
+                }
+
+                // TODO: move to clean up task, or create Row Column cache
+                var columnsOutsideViewport = ColumnWidth.Keys.Where(key => !_lastMeasureViewportColumn.Contains(key)).ToList();
+                foreach (var column in columnsOutsideViewport) {
+                    ColumnWidth.Remove(column);
+                }
+#if DEBUG
+                Debug.WriteLine("VirtualizingGridPanel:OnCleanUp: {0} msec", (DateTime.Now - startTime).TotalMilliseconds);
+#endif
+            } finally {
+                _cleanupOperation = null;
+            }
+#if DEBUG && ASSERT
+            foreach (VariableGridCell child in InternalChildren) {
+                if (!_lastMeasureViewportRow.Contains(child.Row)
+                    || !_lastMeasureViewportColumn.Contains(child.Column)) {
+                    Debug.Fail("Undeleted item is found after CleanUp");
+                }
+            }
+#endif
+                return null;
+        }
+
+        private Range FindFirstChildrenRangeOutsideViewport(ref int start) {
+            int begin = start == -1 ? InternalChildren.Count - 1 : start;
+
+            int? nextStart = null;
+            int lastIndex = 0; int count = 0;
+            for (int i = begin; i >= 0; i--) {
+                VariableGridCell child = (VariableGridCell)InternalChildren[i];
+
+                if (!_lastMeasureViewportRow.Contains(child.Row)
+                    || !_lastMeasureViewportColumn.Contains(child.Column)) {
+                    if (count == 0) {
+                        lastIndex = i;
+                    }
+                    count++;
+                } else {
+                    if (count != 0) {
+                        nextStart = i;
+                        break;
+                    }
+                }
+            }
+
+            if (!nextStart.HasValue) {
+                nextStart = 0;
+            }
+
+            Debug.Assert((start == -1) || (InternalChildren.Count >= start + count));
+            return new Range() { Start = lastIndex - count + 1, Count = count };
+        }
+
         #endregion
+
+        private VariableGridCellGenerator Generator { get; set; }
 
         internal ItemsControl OwningItemsControl { get; private set; }
 
@@ -557,7 +465,7 @@ namespace Gabang.Controls {
 
         internal VirtualizationCacheLengthUnit CacheLengthUnit { get; private set; }
 
-        void EnsurePrerequisite() {
+        private void EnsurePrerequisite() {
             ItemsControl owningItemsControl = ItemsControl.GetItemsOwner(this);
             if (owningItemsControl == null) {
                 throw new NotSupportedException($"{typeof(VariableGridPanel2)} supports only ItemsPanel. Can't use stand alone");

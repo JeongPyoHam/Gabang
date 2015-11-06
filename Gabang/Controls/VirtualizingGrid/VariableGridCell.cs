@@ -36,6 +36,10 @@ namespace Gabang.Controls {
             this.Content = item;
         }
 
+        internal void CleanUp(object item) {
+            this.Content = null;
+        }
+
         protected override Size MeasureOverride(Size constraint) {
             //return new Size(70,  _row.EstimatedHeight);
             return base.MeasureOverride(constraint);
