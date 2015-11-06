@@ -12,6 +12,10 @@ namespace Gabang.Controls {
     /// 
     /// </summary>
     public class VariableGridCell : ContentControl {
+        static VariableGridCell() {
+            DefaultStyleKeyProperty.OverrideMetadata(typeof(VariableGridCell), new FrameworkPropertyMetadata(typeof(VariableGridCell)));
+        }
+
 
         private VariableGridRow _row;
 

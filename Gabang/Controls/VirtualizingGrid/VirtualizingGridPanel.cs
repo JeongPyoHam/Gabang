@@ -137,11 +137,17 @@ namespace Gabang.Controls {
         }
     }
 
+    [Flags]
+    enum ScrollHint {
+        None = 0x00,
+        Horizontal = 0x01,
+        Vertial = 0x02,
+    }
+
     /// <summary>
     /// assumes, IsVirtualizing = true, VirtualizationMode = Standard, ScrollUnit = Pixel, CacheLength = 1, CacheLengthUnit = Item
     /// </summary>
     public class VariableGridPanel2 : VirtualizingPanel, IScrollInfo {
-
         #region IScrollInfo
 
         [DefaultValue(false)]
@@ -212,8 +218,11 @@ namespace Gabang.Controls {
             SetHorizontalOffset(HorizontalOffset + GetPageDelta(Orientation.Horizontal));
         }
 
+        private ScrollHint _scrollHint = ScrollHint.None;
+
         public void SetHorizontalOffset(double offset) {
-            if (offset >= 0 && offset < ExtentWidth) {
+            if (offset >= 0 && offset < ExtentWidth) {  // TODO: subtract the viewport size
+                _scrollHint |= ScrollHint.Horizontal;
                 HorizontalOffset = offset;
                 InvalidateMeasure();    // TODO: if IsVirtualizing==false, InvalidaArrange() should be enough
             }
@@ -221,6 +230,7 @@ namespace Gabang.Controls {
 
         public void SetVerticalOffset(double offset) {
             if (offset >= 0 && offset < ExtentWidth) {
+                _scrollHint |= ScrollHint.Vertial;
                 VerticalOffset = offset;
                 InvalidateMeasure();
             }
@@ -280,16 +290,16 @@ namespace Gabang.Controls {
             viewportColumn.Count++;
             columnIndex++;
 
-            bool isRow = true;
+            bool isRow = _scrollHint.HasFlag(ScrollHint.Vertial);
             while (!IsBiggerThan(desiredSize, availableSize)) {
                 if (isRow) {
-                    MeasureRow(rowIndex, ref desiredSize, ref viewportColumn);
-                    viewportRow.Count++;
-                    rowIndex++;
+                    int growth = GrowVertically(rowIndex, availableSize.Height, ref desiredSize, ref viewportColumn);
+                    viewportRow.Count += growth;
+                    rowIndex += growth;
                 } else {
-                    MeasureColumn(columnIndex, ref desiredSize, ref viewportRow);
-                    viewportColumn.Count++;
-                    columnIndex++;
+                    int growth = GrowHorizontally(columnIndex, availableSize.Width, ref desiredSize, ref viewportRow);
+                    viewportColumn.Count += growth;
+                    columnIndex += growth;
                 }
 
                 isRow ^= true;  // toggle
@@ -306,19 +316,21 @@ namespace Gabang.Controls {
             return desiredSize;
         }
 
-        private Range FindFirstChildrenRangeOutsideViewport() {
+        private Range FindFirstChildrenRangeOutsideViewport(ref int start) {
             Range firstBlock = new Range();
-            for (int i = InternalChildren.Count - 1; i >= 0; i--) {
+            int begin = start == -1 ? InternalChildren.Count - 1 : start;
+            for (int i = begin; i >= 0; i--) {
                 VariableGridCell child = (VariableGridCell) InternalChildren[i];
 
                 if (!_lastMeasureViewportRow.Contains(child.Row)
                     || !_lastMeasureViewportColumn.Contains(child.Column)) {
                     if (firstBlock.Count == 0) {
                         firstBlock.Start = i;
-                        firstBlock.Count++;
                     }
+                    firstBlock.Count++;
                 } else {
                     if (firstBlock.Count != 0) {
+                        start = i;
                         break;
                     }
                 }
@@ -330,14 +342,16 @@ namespace Gabang.Controls {
 #if DEBUG
             DateTime startTime = DateTime.Now;
 #endif
+            int begin = -1;
             while (true) {
-                Range cleanBlock = FindFirstChildrenRangeOutsideViewport();
+                Range cleanBlock = FindFirstChildrenRangeOutsideViewport(ref begin);
 
                 if (cleanBlock.Count == 0) {
                     break;
                 }
 
-                RemoveInternalChildRange(cleanBlock.Start, cleanBlock.Count);
+                // hack
+                RemoveInternalChildRange(cleanBlock.Start - cleanBlock.Count + 1, cleanBlock.Count);
             }
 
             var rowsOutsideViewport = RowHeight.Keys.Where(key => !_lastMeasureViewportRow.Contains(key)).ToList();
@@ -407,6 +421,8 @@ namespace Gabang.Controls {
                 ViewportHeight = _lastMeasureViewportRow.Count;
                 ScrollOwner?.InvalidateScrollInfo();
             }
+
+            _scrollHint = ScrollHint.None;
         }
 
         private Size MeasureChild(int row, int column) {
@@ -436,7 +452,7 @@ namespace Gabang.Controls {
                     heightConstraint = RowHeight[row].Max.Value;
                 }
 
-                child.Measure(new Size(heightConstraint, widthConstraint));
+                child.Measure(new Size(widthConstraint, heightConstraint));
 
                 if (updateWidth) {
                     ColumnWidth[column].Max = child.DesiredSize.Width;
@@ -447,6 +463,16 @@ namespace Gabang.Controls {
 
                 return child.DesiredSize;
             }
+        }
+
+        // returns growth
+        private int GrowVertically(int row, double extent, ref Size desiredSize, ref Range viewportColumn) {
+            int growth = 0;
+            while (desiredSize.Height < extent) {
+                MeasureRow(row + growth, ref desiredSize, ref viewportColumn);
+                growth += 1;
+            }
+            return growth;
         }
 
         private void MeasureRow(int row, ref Size desiredSize, ref Range viewportColumn) {
@@ -464,7 +490,15 @@ namespace Gabang.Controls {
             desiredSize.Width = width;
         }
 
-
+        // returns growth
+        private int GrowHorizontally(int column, double extent, ref Size desiredSize, ref Range viewportRow) {
+            int growth = 0;
+            while (desiredSize.Width < extent) {
+                MeasureColumn(column + growth, ref desiredSize, ref viewportRow);
+                growth += 1;
+            }
+            return growth;
+        }
         private void MeasureColumn(int column, ref Size desiredSize, ref Range viewportRow) {
             double height = 0.0;
             int row = viewportRow.Start;
@@ -477,7 +511,7 @@ namespace Gabang.Controls {
             } while (viewportRow.Contains(row));
 
             desiredSize.Height = height;
-            desiredSize.Width = ColumnWidth[column].Max.Value;
+            desiredSize.Width += ColumnWidth[column].Max.Value;
         }
 
         protected override Size ArrangeOverride(Size finalSize) {
