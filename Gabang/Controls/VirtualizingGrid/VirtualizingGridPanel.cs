@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -113,8 +114,26 @@ namespace Gabang.Controls {
             return elements[rowIndex, columnIndes];
         }
 
-        public void RemoteAll() {
+        public void RemoveAt(int rowIndex, int columnIndex) {
+            elements[rowIndex, columnIndex] = null; // TODO: give a chance each element to clean up such as unregistering event handler
+        }
 
+        public void RemoveColumn(int column) {
+            for (int r = 0; r < RowCount; r++) {
+                RemoveAt(r, column);
+            }
+        }
+
+        public void RemoveRow(int row) {
+            for (int c = 0; c < ColumnCount; c++) {
+                RemoveAt(row, c);
+            }
+        }
+
+        public void RemoteAll() {
+            for (int r = 0; r < RowCount; r++) {
+                RemoveRow(r);
+            }
         }
     }
 
@@ -216,7 +235,7 @@ namespace Gabang.Controls {
         }
 
         private double GetMouseWheelDelta(Orientation orientation) {
-            throw new NotImplementedException();
+            return 1.0; // TODO: change to pixed based!
         }
 
         public Rect MakeVisible(Visual visual, Rect rectangle) {
@@ -235,50 +254,119 @@ namespace Gabang.Controls {
         int _realizedColumnIndex = 0;
         int _realizedColumnCount = 0;
 
-        Range _viewportRow = new Range();
-        Range _viewportColumn = new Range();
+        Range _lastMeasureViewportRow = new Range();
+        Range _lastMeasureViewportColumn = new Range();
 
         Dictionary<int, MaxDouble> RowHeight = new Dictionary<int, MaxDouble>();
         Dictionary<int, MaxDouble> ColumnWidth = new Dictionary<int, MaxDouble>();
 
         protected override Size MeasureOverride(Size availableSize) {
+#if DEBUG
+            DateTime startTime = DateTime.Now;
+#endif
             EnsurePrerequisite();
 
-            // TODO: get the first row in viewport
-            // TODO: get the first column in viewport
             int rowIndex = (int)VerticalOffset;
             int columnIndex = (int)HorizontalOffset;
 
-            _viewportRow.Start = rowIndex;
-            _viewportColumn.Start = columnIndex;
+            Range viewportRow = new Range(); // TODO: is resetting value better than replacing the insntace?
+            viewportRow.Start = rowIndex;
+            Range viewportColumn = new Range();
+            viewportColumn.Start = columnIndex;
 
-            // TODO: assume intersect left top corner
-            Size desiredSize = GetIntersectSize(rowIndex, columnIndex, out rowIndex, out columnIndex);
+            Size desiredSize = MeasureChild(viewportRow.Start, viewportColumn.Start);
+            viewportRow.Count++;
+            rowIndex++;
+            viewportColumn.Count++;
+            columnIndex++;
 
-            if (!IsBiggerThan(desiredSize, availableSize)) {
-                do {
-                    if (desiredSize.Height < availableSize.Height) {
-                        MeasureRow(rowIndex, ref desiredSize);
-                        rowIndex++;
-                        if (columnIndex == 0) { // TODO: hack!!
-                            columnIndex++;
-                        }
-                    }
+            bool isRow = true;
+            while (!IsBiggerThan(desiredSize, availableSize)) {
+                if (isRow) {
+                    MeasureRow(rowIndex, ref desiredSize, ref viewportColumn);
+                    viewportRow.Count++;
+                    rowIndex++;
+                } else {
+                    MeasureColumn(columnIndex, ref desiredSize, ref viewportRow);
+                    viewportColumn.Count++;
+                    columnIndex++;
+                }
 
-                    if (desiredSize.Width < availableSize.Width) {
-                        MeasureColumn(columnIndex, ref desiredSize);
-                        columnIndex++;
-                    }
-                } while (!IsBiggerThan(desiredSize, availableSize));
+                isRow ^= true;  // toggle
             }
-
-            _viewportRow.Count = rowIndex - _viewportRow.Start;
-            _viewportColumn.Count = columnIndex - _viewportColumn.Start;
 
             // TODO: mark measure pass
             UpdateScrollInfo();
 
+            _lastMeasureViewportRow = viewportRow;
+            _lastMeasureViewportColumn = viewportColumn;
+#if DEBUG
+            Debug.WriteLine("VirtualizingGridPanel:Measure: {0} msec", (DateTime.Now - startTime).TotalMilliseconds);
+#endif
             return desiredSize;
+        }
+
+        private Range FindFirstChildrenRangeOutsideViewport() {
+            Range firstBlock = new Range();
+            for (int i = InternalChildren.Count - 1; i >= 0; i--) {
+                VariableGridCell child = (VariableGridCell) InternalChildren[i];
+
+                if (!_lastMeasureViewportRow.Contains(child.Row)
+                    || !_lastMeasureViewportColumn.Contains(child.Column)) {
+                    if (firstBlock.Count == 0) {
+                        firstBlock.Start = i;
+                        firstBlock.Count++;
+                    }
+                } else {
+                    if (firstBlock.Count != 0) {
+                        break;
+                    }
+                }
+            }
+            return firstBlock;
+        }
+
+        private void Clean() {
+#if DEBUG
+            DateTime startTime = DateTime.Now;
+#endif
+            while (true) {
+                Range cleanBlock = FindFirstChildrenRangeOutsideViewport();
+
+                if (cleanBlock.Count == 0) {
+                    break;
+                }
+
+                RemoveInternalChildRange(cleanBlock.Start, cleanBlock.Count);
+            }
+
+            var rowsOutsideViewport = RowHeight.Keys.Where(key => !_lastMeasureViewportRow.Contains(key)).ToList();
+            foreach (var row in rowsOutsideViewport) {
+                RowHeight.Remove(row);
+                Generator.RemoveRow(row);
+            }
+
+            var columnsOutsideViewport = ColumnWidth.Keys.Where(key => !_lastMeasureViewportColumn.Contains(key)).ToList();
+            foreach (var column in columnsOutsideViewport) {
+                ColumnWidth.Remove(column);
+                Generator.RemoveColumn(column);
+            }
+
+            // freeze remaining row and columns
+            foreach (var rowHeight in RowHeight) {
+                if (rowHeight.Value.Max.HasValue) {
+                    rowHeight.Value.Frozen = true;
+                }
+            }
+
+            foreach (var columnWidth in ColumnWidth) {
+                if (columnWidth.Value.Max.HasValue) {
+                    columnWidth.Value.Frozen = true;
+                }
+            }
+#if DEBUG
+            Debug.WriteLine("VirtualizingGridPanel:Clean: {0} msec", (DateTime.Now - startTime).TotalMilliseconds);
+#endif
         }
 
         private Size GetIntersectSize(int rowIndex, int columnIndex, out int rowIntersectLimit, out int columnIntersectLimit) {
@@ -315,97 +403,116 @@ namespace Gabang.Controls {
             if (Generator != null) {
                 ExtentWidth = Generator.ColumnCount;
                 ExtentHeight = Generator.RowCount;
-                ViewportWidth = 1;
-                ViewportHeight = 1;
+                ViewportWidth = _lastMeasureViewportColumn.Count;
+                ViewportHeight = _lastMeasureViewportRow.Count;
                 ScrollOwner?.InvalidateScrollInfo();
             }
         }
 
-        private void MeasureRow(int index, ref Size desiredSize) {
-            MaxDouble height = new MaxDouble();
+        private Size MeasureChild(int row, int column) {
+            if (_lastMeasureViewportRow.Contains(row) && _lastMeasureViewportColumn.Contains(column)) {
+                Debug.Assert(RowHeight.ContainsKey(row) && ColumnWidth.ContainsKey(column));
+                Debug.Assert(Generator.GetAt(row, column) != null);
 
-            double width = 0.0;
-            int column = _viewportColumn.Start;
-            do {
-                UIElement child = Generator.GenerateAt(index, column);
+                // TODO: measure again? maybe, not
+                return new Size(ColumnWidth[column].Max.Value, RowHeight[row].Max.Value);
+            } else {
+                var child = Generator.GenerateAt(row, column);
                 AddInternalChild(child);
 
-                // TODO: bug. width follows the first element always
-                Size constraint = new Size(double.PositiveInfinity, double.PositiveInfinity);
-                child.Measure(constraint);
-
+                bool updateWidth = true; double widthConstraint = double.PositiveInfinity;
                 if (!ColumnWidth.ContainsKey(column)) {
                     ColumnWidth[column] = new MaxDouble();
+                } else if (ColumnWidth[column].Frozen) {
+                    updateWidth = false;
+                    widthConstraint = ColumnWidth[column].Max.Value;
                 }
 
-                ColumnWidth[column].Max = child.DesiredSize.Width;
-                height.Max = child.DesiredSize.Height;
+                bool updateHeight = true; double heightConstraint = double.PositiveInfinity;
+                if (!RowHeight.ContainsKey(row)) {
+                    RowHeight[row] = new MaxDouble();
+                } else if (RowHeight[row].Frozen) {
+                    updateHeight = false;
+                    heightConstraint = RowHeight[row].Max.Value;
+                }
 
-                width += ColumnWidth[column].Max.Value;
-                column++;
-            } while (column < _realizedColumnCount) ;
+                child.Measure(new Size(heightConstraint, widthConstraint));
 
-            RowHeight[index] = height;
+                if (updateWidth) {
+                    ColumnWidth[column].Max = child.DesiredSize.Width;
+                }
+                if (updateHeight) {
+                    RowHeight[row].Max = child.DesiredSize.Height;
+                }
 
-            desiredSize.Height += height.Max.Value;
-            desiredSize.Width = width;
-
-            _realizedRowCount++;
-            if (_realizedColumnCount == 0) {
-                _realizedColumnCount++;
+                return child.DesiredSize;
             }
         }
 
-
-        private void MeasureColumn(int index, ref Size desiredSize) {
-            MaxDouble width = new MaxDouble();
-
-            double height = 0.0;
-            int row = _viewportRow.Start;
+        private void MeasureRow(int row, ref Size desiredSize, ref Range viewportColumn) {
+            double width = 0.0;
+            int column = viewportColumn.Start;
             do {
-                UIElement child = Generator.GenerateAt(row, index);
-                AddInternalChild(child);
+                Size childDesiredSize = MeasureChild(row, column);
 
-                Size constraint = new Size(double.PositiveInfinity, double.PositiveInfinity);
-                child.Measure(constraint);
+                width += childDesiredSize.Width;
 
-                if (!RowHeight.ContainsKey(row)) {
-                    RowHeight[row] = new MaxDouble();
-                }
+                column++;
+            } while (viewportColumn.Contains(column)) ;
 
-                RowHeight[row].Max = child.DesiredSize.Width;
-                width.Max = child.DesiredSize.Height;
+            desiredSize.Height += RowHeight[row].Max.Value;
+            desiredSize.Width = width;
+        }
 
-                height += RowHeight[row].Max.Value;
+
+        private void MeasureColumn(int column, ref Size desiredSize, ref Range viewportRow) {
+            double height = 0.0;
+            int row = viewportRow.Start;
+            do {
+                Size childDesiredSize = MeasureChild(row, column);
+
+                height += childDesiredSize.Height;
+
                 row++;
-            } while (row < _realizedRowCount);
-
-            ColumnWidth[index] = width;
+            } while (viewportRow.Contains(row));
 
             desiredSize.Height = height;
-            desiredSize.Width += width.Max.Value;
-
-            _realizedColumnCount++;
-            if (_realizedRowCount == 0) {
-                _realizedRowCount++;
-            }
+            desiredSize.Width = ColumnWidth[column].Max.Value;
         }
 
         protected override Size ArrangeOverride(Size finalSize) {
-            double left = 0.0, top = 0.0;
-            for (int r = _viewportRow.Start; r < (_viewportRow.Start + _viewportRow.Count); r++) {
-                left = 0.0;
-                double height = RowHeight[r].Max.Value;
-                for (int c = _viewportColumn.Start; c < (_viewportColumn.Start + _viewportColumn.Count); c++) {
-                    var element = Generator.GetAt(r, c);
-                    double width = ColumnWidth[c].Max.Value;
-                    element.Arrange(new Rect(left, top, width, height));
-                    left += width;
+#if DEBUG
+            DateTime startTime = DateTime.Now;
+#endif
+            foreach (VariableGridCell child in InternalChildren) {
+                if (_lastMeasureViewportRow.Contains(child.Row)
+                    && _lastMeasureViewportColumn.Contains(child.Column)) {
+                    // arrange
+                    child.Visibility = Visibility.Visible;
+
+                    // top
+                    double top = 0.0;
+                    for (int r = _lastMeasureViewportRow.Start; r < child.Row; r++) {
+                        top  += RowHeight[r].Max.Value;
+                    }
+                    // left
+                    double left = 0.0;
+                    for (int c = _lastMeasureViewportColumn.Start; c < child.Column; c++) {
+                        left += ColumnWidth[c].Max.Value;
+                    }
+
+                    child.Arrange(new Rect(left, top, ColumnWidth[child.Column].Max.Value, RowHeight[child.Row].Max.Value));
+                } else {
+                    child.Visibility = Visibility.Collapsed;
                 }
-                top += height;
             }
 
-            return new Size(left, top);
+#if DEBUG
+            Debug.WriteLine("VirtualizingGridPanel:Arrange(except Clean): {0} msec", (DateTime.Now - startTime).TotalMilliseconds);
+#endif
+            Clean();    // TODO: do this in background job
+
+            return finalSize;
         }
 
         #endregion

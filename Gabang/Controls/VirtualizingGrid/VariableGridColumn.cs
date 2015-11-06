@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace Gabang.Controls {
     public class VariableGridColumn {
+
         public double EstimatedWidth {
             get {
                 return 50;

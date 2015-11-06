@@ -6,9 +6,10 @@ using System.Threading.Tasks;
 
 namespace Gabang.Controls {
     public struct Range {
-        private int _start;
+        // [_start, _end)
+        private int _start; // closed
         private int _count;
-        private int _end;
+        private int _end;   // open
 
         public int Start {
             get { return _start; }
@@ -20,6 +21,10 @@ namespace Gabang.Controls {
         public int Count {
             get { return _count; }
             set {
+                if (value < 0) {
+                    throw new ArgumentOutOfRangeException("value");
+                }
+
                 _count = value;
                 _end = _start + _count;
             }
@@ -27,6 +32,10 @@ namespace Gabang.Controls {
 
         public bool Contains(int value) {
             return (value >= _start) && (value < _end);
+        }
+
+        public bool Intersect(Range other) {
+            return (this._end > other._start) && (this._start < other._end);
         }
     }
 }

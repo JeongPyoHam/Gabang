@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -7,12 +8,17 @@ using System.Windows;
 using System.Windows.Controls;
 
 namespace Gabang.Controls {
+    /// <summary>
+    /// 
+    /// </summary>
     public class VariableGridCell : ContentControl {
 
         private VariableGridRow _row;
 
+        [DefaultValue(-1)]
         public int Row { get; set; }
 
+        [DefaultValue(-1)]
         public int Column { get; set; }
 
         internal void Prepare(VariableGridRow owningRow, object item) {
