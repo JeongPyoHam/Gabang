@@ -59,23 +59,5 @@ namespace Gabang.Controls {
 
             return false;
         }
-
-        //public void RemoveColumn(int column) {
-        //    for (int r = 0; r < RowCount; r++) {
-        //        RemoveAt(r, column);
-        //    }
-        //}
-
-        //public void RemoveRow(int row) {
-        //    for (int c = 0; c < ColumnCount; c++) {
-        //        RemoveAt(row, c);
-        //    }
-        //}
-
-        //public void RemoteAll() {
-        //    for (int r = 0; r < RowCount; r++) {
-        //        RemoveRow(r);
-        //    }
-        //}
     }
 }

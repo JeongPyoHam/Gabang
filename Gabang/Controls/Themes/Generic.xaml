@@ -294,10 +294,11 @@
     </Style>
 
     <Style x:Key="{x:Type local:VariableGridCell}" TargetType="{x:Type local:VariableGridCell}">
+        <Setter Property="Padding" Value="1" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type local:VariableGridCell}">
-                    <Border SnapsToDevicePixels="true" BorderBrush="Black" BorderThickness="1">
+                    <Border SnapsToDevicePixels="true" BorderBrush="Black" BorderThickness="1" Padding="{TemplateBinding Padding}">
                         <ContentPresenter />
                     </Border>
                 </ControlTemplate>
