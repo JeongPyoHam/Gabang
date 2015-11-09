@@ -16,7 +16,7 @@ namespace Gabang.Controls {
     /// <summary>
     /// assumes, IsVirtualizing = true, VirtualizationMode = Standard, ScrollUnit = Pixel, CacheLength = 1, CacheLengthUnit = Item
     /// </summary>
-    public class VariableGridPanel2 : VirtualizingPanel, IScrollInfo {
+    public class VariableGridPanel : VirtualizingPanel, IScrollInfo {
         #region IScrollInfo
 
         [Flags]
@@ -519,29 +519,29 @@ namespace Gabang.Controls {
         private void EnsurePrerequisite() {
             ItemsControl owningItemsControl = ItemsControl.GetItemsOwner(this);
             if (owningItemsControl == null) {
-                throw new NotSupportedException($"{typeof(VariableGridPanel2)} supports only ItemsPanel. Can't use stand alone");
+                throw new NotSupportedException($"{typeof(VariableGridPanel)} supports only ItemsPanel. Can't use stand alone");
             }
             OwningItemsControl = owningItemsControl;
 
-            if (!(owningItemsControl is VariableGridOrg)) {
-                throw new NotSupportedException($"{typeof(VariableGridPanel2)} supports only {typeof(VariableGridOrg)}'s ItemsPanel");
+            if (!(owningItemsControl is VariableGrid)) {
+                throw new NotSupportedException($"{typeof(VariableGridPanel)} supports only {typeof(VariableGrid)}'s ItemsPanel");
             }
-            this.Generator = ((VariableGridOrg)owningItemsControl).Generator;
+            this.Generator = ((VariableGrid)owningItemsControl).Generator;
 
             if (ScrollOwner == null) {
-                throw new NotSupportedException($"{typeof(VariableGridPanel2)} must be used for top level scrolling panel");
+                throw new NotSupportedException($"{typeof(VariableGridPanel)} must be used for top level scrolling panel");
             }
 
             if (!GetIsVirtualizing(owningItemsControl)) {
-                throw new NotSupportedException($"{typeof(VariableGridPanel2)} supports onlly IsVirtualizing=\"true\"");
+                throw new NotSupportedException($"{typeof(VariableGridPanel)} supports onlly IsVirtualizing=\"true\"");
             }
 
             if (GetVirtualizationMode(owningItemsControl) != VirtualizationMode.Standard) {
-                throw new NotSupportedException($"{typeof(VariableGridPanel2)} supports onlly VirtualizationMode=\"Standard\"");
+                throw new NotSupportedException($"{typeof(VariableGridPanel)} supports onlly VirtualizationMode=\"Standard\"");
             }
 
             if (GetScrollUnit(owningItemsControl) != ScrollUnit.Pixel) {
-                throw new NotSupportedException($"{typeof(VariableGridPanel2)} supports onlly ScrollUnit=\"Pixel\"");
+                throw new NotSupportedException($"{typeof(VariableGridPanel)} supports onlly ScrollUnit=\"Pixel\"");
             }
 
             CacheLength = GetCacheLength(owningItemsControl);

@@ -49,17 +49,19 @@
     <Compile Include="DummyControl.cs" />
     <Compile Include="VirtualizingGrid\ConstantCountList.cs" />
     <Compile Include="VirtualizingGrid\ConstantList.cs" />
+    <Compile Include="VirtualizingGrid\GridPresenter.cs" />
     <Compile Include="VirtualizingGrid\IntegerList.cs" />
     <Compile Include="VirtualizingGrid\MaxDouble.cs" />
     <Compile Include="VirtualizingGrid\Range.cs" />
+    <Compile Include="VirtualizingGrid\VariableGrid.cs" />
     <Compile Include="VirtualizingGrid\VariableGridCellGenerator.cs" />
     <Compile Include="VirtualizingGrid\VariableGridDataSource.cs" />
-    <Compile Include="VirtualizingGrid\VariableGrid.cs" />
+    <Compile Include="VirtualizingGrid\VariableGridOrg.cs" />
     <Compile Include="VirtualizingGrid\VariableGridCell.cs" />
     <Compile Include="VirtualizingGrid\VariableGridColumn.cs" />
     <Compile Include="VirtualizingGrid\VariableGridPanelOrg.cs" />
     <Compile Include="VirtualizingGrid\VirtualizingGridPanel.cs" />
-    <Compile Include="VirtualizingGrid\VariableGridRow.cs" />
+    <Compile Include="VirtualizingGrid\VariableGridRowOrg.cs" />
     <Page Include="Themes\Generic.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
