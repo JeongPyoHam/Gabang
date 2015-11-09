@@ -149,6 +149,7 @@ namespace Gabang.Controls {
         Range _lastMeasureViewportRow = new Range();
         Range _lastMeasureViewportColumn = new Range();
 
+        // TODO: replace dictionary to Row/Column class
         Dictionary<int, MaxDouble> RowHeight = new Dictionary<int, MaxDouble>();
         Dictionary<int, MaxDouble> ColumnWidth = new Dictionary<int, MaxDouble>();
 
@@ -158,44 +159,37 @@ namespace Gabang.Controls {
 #endif
             EnsurePrerequisite();
 
-            int rowIndex = (int)VerticalOffset;
-            int columnIndex = (int)HorizontalOffset;
-
-            Range viewportRow = new Range(); // TODO: is resetting value better than replacing the insntace?
-            viewportRow.Start = rowIndex;
+            // start from scroll offset
+            Range viewportRow = new Range();
+            viewportRow.Start = (int)VerticalOffset;
             Range viewportColumn = new Range();
-            viewportColumn.Start = columnIndex;
+            viewportColumn.Start = (int)HorizontalOffset;
 
             int horizontalGrowth = 1;
             int verticalGrowth = 1;
 
             Size desiredSize = MeasureChild(viewportRow.Start, viewportColumn.Start);
-            viewportRow.Count += verticalGrowth;
-            rowIndex += verticalGrowth;
+            viewportRow.Count += 1;
             viewportColumn.Count += horizontalGrowth;
-            columnIndex += horizontalGrowth;
 
             bool isRow = _scrollHint.HasFlag(ScrollHint.Vertial);
             while ((horizontalGrowth != 0 || verticalGrowth != 0)
-                && (rowIndex != Generator.RowCount || columnIndex != Generator.ColumnCount)) {
+                && (viewportRow.Count != Generator.RowCount || viewportColumn.Count != Generator.ColumnCount)) {
                 if (isRow) {
-                    verticalGrowth = GrowVertically(rowIndex, availableSize.Height, ref desiredSize, ref viewportColumn);
-                    viewportRow.Count += verticalGrowth;
-                    rowIndex += verticalGrowth;
+                    verticalGrowth = GrowVertically(ref viewportRow, availableSize.Height, ref desiredSize, ref viewportColumn);
                 } else {
-                    horizontalGrowth = GrowHorizontally(columnIndex, availableSize.Width, ref desiredSize, ref viewportRow);
-                    viewportColumn.Count += horizontalGrowth;
-                    columnIndex += horizontalGrowth;
+                    horizontalGrowth = GrowHorizontally(ref viewportColumn, availableSize.Width, ref desiredSize, ref viewportRow);
                 }
 
                 isRow ^= true;  // toggle
             }
 
-            // TODO: mark measure pass
-            UpdateScrollInfo();
 
             _lastMeasureViewportRow = viewportRow;
             _lastMeasureViewportColumn = viewportColumn;
+
+            // TODO: mark measure pass
+            UpdateScrollInfo();
 #if DEBUG
             Debug.WriteLine("VirtualizingGridPanel:Measure: {0} msec", (DateTime.Now - startTime).TotalMilliseconds);
 #endif
@@ -206,7 +200,11 @@ namespace Gabang.Controls {
             if (Generator != null) {
                 ExtentWidth = Generator.ColumnCount;
                 ExtentHeight = Generator.RowCount;
+
+                VerticalOffset = _lastMeasureViewportRow.Start;
                 ViewportWidth = _lastMeasureViewportColumn.Count;
+
+                HorizontalOffset = _lastMeasureViewportColumn.Start;
                 ViewportHeight = _lastMeasureViewportRow.Count;
                 ScrollOwner?.InvalidateScrollInfo();
             }
@@ -258,13 +256,29 @@ namespace Gabang.Controls {
             }
         }
 
-        private int GrowVertically(int row, double extent, ref Size desiredSize, ref Range viewportColumn) {
+        private int GrowVertically(ref Range viewportRow, double extent, ref Size desiredSize, ref Range viewportColumn) {
             int growth = 0;
-            while ((desiredSize.Height < extent) && ((row + growth) < Generator.RowCount)) {
-                MeasureRow(row + growth, ref desiredSize, ref viewportColumn);
+            int growStartAt = viewportRow.Start + viewportRow.Count;
+
+            // grow forward
+            while ((desiredSize.Height < extent) && ((growStartAt + growth) < Generator.RowCount)) {
+                MeasureRow(growStartAt + growth, ref desiredSize, ref viewportColumn);
                 growth += 1;
             }
-            return growth;
+
+
+            // grow backward
+            int growthBackward = 0;
+            int growBackwardStartAt = viewportRow.Start - 1;
+            while ((desiredSize.Height < extent) && (growBackwardStartAt + growthBackward > 0)) {
+                MeasureRow(growStartAt, ref desiredSize, ref viewportColumn);
+                growthBackward += 1;
+            }
+
+            viewportRow.Start -= growthBackward;
+            viewportRow.Count += growth + growthBackward;
+
+            return growth + growthBackward;
         }
 
         private void MeasureRow(int row, ref Size desiredSize, ref Range viewportColumn) {
@@ -282,14 +296,21 @@ namespace Gabang.Controls {
             desiredSize.Width = width;
         }
 
-        private int GrowHorizontally(int column, double extent, ref Size desiredSize, ref Range viewportRow) {
+        private int GrowHorizontally(ref Range viewportColumn, double extent, ref Size desiredSize, ref Range viewportRow) {
             int growth = 0;
-            while ((desiredSize.Width < extent) && ((column + growth) < Generator.ColumnCount)) {
-                MeasureColumn(column + growth, ref desiredSize, ref viewportRow);
+            int growStartAt = viewportColumn.Start + viewportColumn.Count;
+
+            // grow forward
+            while ((desiredSize.Width < extent) && ((growStartAt + growth) < Generator.ColumnCount)) {
+                MeasureColumn(growStartAt + growth, ref desiredSize, ref viewportRow);
                 growth += 1;
             }
+
+            viewportColumn.Count += growth;
+
             return growth;
         }
+
         private void MeasureColumn(int column, ref Size desiredSize, ref Range viewportRow) {
             double height = 0.0;
             int row = viewportRow.Start;
