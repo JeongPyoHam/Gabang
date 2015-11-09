@@ -146,6 +146,8 @@ namespace Gabang.Controls {
 
         #region Overrides
 
+        Point _lastMeasureOffset = new Point();
+        Size _lastMeasureDesiredSize = new Size();
         Range _lastMeasureViewportRow = new Range();
         Range _lastMeasureViewportColumn = new Range();
 
@@ -184,28 +186,44 @@ namespace Gabang.Controls {
                 isRow ^= true;  // toggle
             }
 
-
             _lastMeasureViewportRow = viewportRow;
             _lastMeasureViewportColumn = viewportColumn;
+            _lastMeasureDesiredSize = desiredSize;
+
+            if (desiredSize.Height > availableSize.Height) {
+                if (_lastMeasureViewportRow.Start == 0) {
+                    _lastMeasureOffset.Y = 0;
+                } else if (_lastMeasureViewportRow.Start + _lastMeasureViewportRow.Count >= Generator.RowCount) {   // BUG: last time scroll a little bit more than one item
+                    _lastMeasureOffset.Y = availableSize.Height - desiredSize.Height;
+                }
+            }
+            if (desiredSize.Width > availableSize.Width) {
+                if (_lastMeasureViewportColumn.Start == 0) {
+                    _lastMeasureOffset.X = 0;
+                } else if (_lastMeasureViewportColumn.Start + _lastMeasureViewportColumn.Count >= Generator.ColumnCount) {
+                    _lastMeasureOffset.X = availableSize.Width - desiredSize.Width;
+                }
+            }
 
             // TODO: mark measure pass
-            UpdateScrollInfo();
+            UpdateScrollInfo(desiredSize, availableSize);
 #if DEBUG && PRINT
             Debug.WriteLine("VirtualizingGridPanel:Measure: {0} msec", (DateTime.Now - startTime).TotalMilliseconds);
 #endif
             return desiredSize;
         }
 
-        private void UpdateScrollInfo() {
+        private void UpdateScrollInfo(Size desiredSize, Size availableSize) {
             if (Generator != null) {
                 ExtentWidth = Generator.ColumnCount;
                 ExtentHeight = Generator.RowCount;
 
                 VerticalOffset = _lastMeasureViewportRow.Start;
-                ViewportWidth = _lastMeasureViewportColumn.Count;
-
                 HorizontalOffset = _lastMeasureViewportColumn.Start;
+
+                ViewportWidth = _lastMeasureViewportColumn.Count;
                 ViewportHeight = _lastMeasureViewportRow.Count;
+
                 ScrollOwner?.InvalidateScrollInfo();
             }
 
@@ -348,13 +366,16 @@ namespace Gabang.Controls {
                     // top
                     double top = 0.0;
                     for (int r = _lastMeasureViewportRow.Start; r < child.Row; r++) {
-                        top  += RowHeight[r].Max.Value;
+                        top += RowHeight[r].Max.Value;
                     }
+                    top += _lastMeasureOffset.Y;
+
                     // left
                     double left = 0.0;
                     for (int c = _lastMeasureViewportColumn.Start; c < child.Column; c++) {
                         left += ColumnWidth[c].Max.Value;
                     }
+                    left += _lastMeasureOffset.X;
 
                     child.Arrange(new Rect(left, top, ColumnWidth[child.Column].Max.Value, RowHeight[child.Row].Max.Value));
                 } else {
@@ -365,7 +386,7 @@ namespace Gabang.Controls {
 #if DEBUG && PRINT
             Debug.WriteLine("VirtualizingGridPanel:Arrange(except Clean): {0} msec", (DateTime.Now - startTime).TotalMilliseconds);
 #endif
-            PostArrange();    // TODO: do this in background job
+            PostArrange();
 
             return finalSize;
         }
