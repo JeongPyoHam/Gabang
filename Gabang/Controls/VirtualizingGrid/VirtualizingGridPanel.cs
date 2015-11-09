@@ -523,10 +523,10 @@ namespace Gabang.Controls {
             }
             OwningItemsControl = owningItemsControl;
 
-            if (!(owningItemsControl is VariableGrid)) {
-                throw new NotSupportedException($"{typeof(VariableGridPanel2)} supports only {typeof(VariableGrid)}'s ItemsPanel");
+            if (!(owningItemsControl is VariableGridOrg)) {
+                throw new NotSupportedException($"{typeof(VariableGridPanel2)} supports only {typeof(VariableGridOrg)}'s ItemsPanel");
             }
-            this.Generator = ((VariableGrid)owningItemsControl).Generator;
+            this.Generator = ((VariableGridOrg)owningItemsControl).Generator;
 
             if (ScrollOwner == null) {
                 throw new NotSupportedException($"{typeof(VariableGridPanel2)} must be used for top level scrolling panel");

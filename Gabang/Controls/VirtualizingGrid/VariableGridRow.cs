@@ -12,12 +12,12 @@ namespace Gabang.Controls {
     /// <summary>
     /// Row of <see cref="VariableGrid"/>, which is ItemsControl itself
     /// </summary>
-    public class VariableGridRow : ItemsControl {
-        static VariableGridRow() {
-            DefaultStyleKeyProperty.OverrideMetadata(typeof(VariableGridRow), new FrameworkPropertyMetadata(typeof(VariableGridRow)));
+    public class VariableGridRowOrg : ItemsControl {
+        static VariableGridRowOrg() {
+            DefaultStyleKeyProperty.OverrideMetadata(typeof(VariableGridRowOrg), new FrameworkPropertyMetadata(typeof(VariableGridRowOrg)));
         }
 
-        public VariableGridRow() {
+        public VariableGridRowOrg() {
         }
 
         public object Header { get; set; }
@@ -30,7 +30,7 @@ namespace Gabang.Controls {
 
         internal IScrollInfo ScrollOwner { get; private set; }
 
-        internal VariableGrid OwningJointGrid { get; private set; }
+        internal VariableGridOrg OwningJointGrid { get; private set; }
 
         protected override DependencyObject GetContainerForItemOverride() {
             return new VariableGridCell();
@@ -40,14 +40,14 @@ namespace Gabang.Controls {
             base.PrepareContainerForItemOverride(element, item);
 
             var cell = (VariableGridCell)element;
-            cell.Prepare(this, item);
+            //cell.Prepare(this, item);
         }
 
         public override void OnApplyTemplate() {
             base.OnApplyTemplate();
         }
 
-        internal void Prepare(VariableGrid owner, object item) {
+        internal void Prepare(VariableGridOrg owner, object item) {
             if (!(item is IList)) {
                 throw new NotSupportedException("JointCollectionGridRow supports only IList for item");
             }
@@ -58,7 +58,7 @@ namespace Gabang.Controls {
             ItemsSource = items;
         }
 
-        internal void Clear(VariableGrid owner, object item) {
+        internal void Clear(VariableGridOrg owner, object item) {
         }
 
         internal void NotifyScroll(ScrollEventArgs e) {

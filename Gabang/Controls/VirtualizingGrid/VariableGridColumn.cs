@@ -34,12 +34,12 @@ namespace Gabang.Controls {
         public DataTemplate HeaderTemplate { get; set; }
     }
 
-    internal class VariableGridColumn {
+    internal class VariableGridColumn : VariableGridStripe {
 
-        public MaxDouble ComputedWidth { get; set; }
+        public VariableGridColumn() : base(Orientation.Vertical) { }
+    }
 
-        public object HeaderContent { get; set; }
-
-        public DataTemplate HeaderTemplate { get; set; }
+    internal class VariableGridRow : VariableGridStripe {
+        public VariableGridRow() : base(Orientation.Horizontal) { }
     }
 }

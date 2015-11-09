@@ -1,48 +1,42 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 
 namespace Gabang.Controls {
     /// <summary>
-    /// 
+    /// Grid item container that maps to a cell in grid
     /// </summary>
     public class VariableGridCell : ContentControl {
         static VariableGridCell() {
             DefaultStyleKeyProperty.OverrideMetadata(typeof(VariableGridCell), new FrameworkPropertyMetadata(typeof(VariableGridCell)));
         }
 
-
-        private VariableGridRow _row;
-
+        /// <summary>
+        /// Vertical item index
+        /// </summary>
         [DefaultValue(-1)]
         public int Row { get; set; }
 
+        /// <summary>
+        /// Horizontal item index
+        /// </summary>
         [DefaultValue(-1)]
         public int Column { get; set; }
 
-        internal void Prepare(VariableGridRow owningRow, object item) {
-            _row = owningRow;
-            int columnIndex = _row.ItemContainerGenerator.IndexFromContainer(this);
-
+        /// <summary>
+        /// Prepare data when realized
+        /// </summary>
+        /// <param name="item">content data for this cell</param>
+        public virtual void Prepare(object item) {
             this.Content = item;
         }
 
-        internal void Prepare(object item) {
-            this.Content = item;
-        }
-
-        internal void CleanUp(object item) {
+        /// <summary>
+        /// Clean up data when virtualized
+        /// </summary>
+        /// <param name="item">content data for this cell</param>
+        public virtual void CleanUp(object item) {
             this.Content = null;
-        }
-
-        protected override Size MeasureOverride(Size constraint) {
-            //return new Size(70,  _row.EstimatedHeight);
-            return base.MeasureOverride(constraint);
         }
     }
 }
