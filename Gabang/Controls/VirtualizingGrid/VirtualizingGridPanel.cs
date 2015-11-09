@@ -154,7 +154,7 @@ namespace Gabang.Controls {
         Dictionary<int, MaxDouble> ColumnWidth = new Dictionary<int, MaxDouble>();
 
         protected override Size MeasureOverride(Size availableSize) {
-#if DEBUG
+#if DEBUG && PRINT
             DateTime startTime = DateTime.Now;
 #endif
             EnsurePrerequisite();
@@ -176,9 +176,9 @@ namespace Gabang.Controls {
             while ((horizontalGrowth != 0 || verticalGrowth != 0)
                 && (viewportRow.Count != Generator.RowCount || viewportColumn.Count != Generator.ColumnCount)) {
                 if (isRow) {
-                    verticalGrowth = GrowVertically(ref viewportRow, availableSize.Height, ref desiredSize, ref viewportColumn);
+                    verticalGrowth = GrowVertically(availableSize.Height, ref desiredSize, ref viewportRow, ref viewportColumn);
                 } else {
-                    horizontalGrowth = GrowHorizontally(ref viewportColumn, availableSize.Width, ref desiredSize, ref viewportRow);
+                    horizontalGrowth = GrowHorizontally(availableSize.Width, ref desiredSize, ref viewportRow, ref viewportColumn);
                 }
 
                 isRow ^= true;  // toggle
@@ -190,7 +190,7 @@ namespace Gabang.Controls {
 
             // TODO: mark measure pass
             UpdateScrollInfo();
-#if DEBUG
+#if DEBUG && PRINT
             Debug.WriteLine("VirtualizingGridPanel:Measure: {0} msec", (DateTime.Now - startTime).TotalMilliseconds);
 #endif
             return desiredSize;
@@ -256,7 +256,7 @@ namespace Gabang.Controls {
             }
         }
 
-        private int GrowVertically(ref Range viewportRow, double extent, ref Size desiredSize, ref Range viewportColumn) {
+        private int GrowVertically(double extent, ref Size desiredSize, ref Range viewportRow, ref Range viewportColumn) {
             int growth = 0;
             int growStartAt = viewportRow.Start + viewportRow.Count;
 
@@ -266,12 +266,11 @@ namespace Gabang.Controls {
                 growth += 1;
             }
 
-
             // grow backward
             int growthBackward = 0;
             int growBackwardStartAt = viewportRow.Start - 1;
-            while ((desiredSize.Height < extent) && (growBackwardStartAt + growthBackward > 0)) {
-                MeasureRow(growStartAt, ref desiredSize, ref viewportColumn);
+            while ((desiredSize.Height < extent) && (growBackwardStartAt - growthBackward >= 0)) {
+                MeasureRow(growBackwardStartAt - growthBackward, ref desiredSize, ref viewportColumn);
                 growthBackward += 1;
             }
 
@@ -279,6 +278,31 @@ namespace Gabang.Controls {
             viewportRow.Count += growth + growthBackward;
 
             return growth + growthBackward;
+        }
+
+
+        private int GrowHorizontally(double extent, ref Size desiredSize, ref Range viewportRow, ref Range viewportColumn) {
+            int growth = 0;
+            int growStartAt = viewportColumn.Start + viewportColumn.Count;
+
+            // grow forward
+            while ((desiredSize.Width < extent) && ((growStartAt + growth) < Generator.ColumnCount)) {
+                MeasureColumn(growStartAt + growth, ref desiredSize, ref viewportRow);
+                growth += 1;
+            }
+
+            // grow backward
+            int growthBackward = 0;
+            int growBackwardStartAt = viewportColumn.Start - 1;
+            while ((desiredSize.Width < extent) && ((growBackwardStartAt - growthBackward >= 0))) {
+                MeasureColumn(growBackwardStartAt - growthBackward, ref desiredSize, ref viewportRow);
+                growthBackward += 1;
+            }
+
+            viewportColumn.Start -= growthBackward;
+            viewportColumn.Count += growth + growthBackward;
+
+            return growth;
         }
 
         private void MeasureRow(int row, ref Size desiredSize, ref Range viewportColumn) {
@@ -294,21 +318,6 @@ namespace Gabang.Controls {
 
             desiredSize.Height += RowHeight[row].Max.Value;
             desiredSize.Width = width;
-        }
-
-        private int GrowHorizontally(ref Range viewportColumn, double extent, ref Size desiredSize, ref Range viewportRow) {
-            int growth = 0;
-            int growStartAt = viewportColumn.Start + viewportColumn.Count;
-
-            // grow forward
-            while ((desiredSize.Width < extent) && ((growStartAt + growth) < Generator.ColumnCount)) {
-                MeasureColumn(growStartAt + growth, ref desiredSize, ref viewportRow);
-                growth += 1;
-            }
-
-            viewportColumn.Count += growth;
-
-            return growth;
         }
 
         private void MeasureColumn(int column, ref Size desiredSize, ref Range viewportRow) {
@@ -327,7 +336,7 @@ namespace Gabang.Controls {
         }
 
         protected override Size ArrangeOverride(Size finalSize) {
-#if DEBUG
+#if DEBUG && PRINT
             DateTime startTime = DateTime.Now;
 #endif
             foreach (VariableGridCell child in InternalChildren) {
@@ -353,7 +362,7 @@ namespace Gabang.Controls {
                 }
             }
 
-#if DEBUG
+#if DEBUG && PRINT
             Debug.WriteLine("VirtualizingGridPanel:Arrange(except Clean): {0} msec", (DateTime.Now - startTime).TotalMilliseconds);
 #endif
             PostArrange();    // TODO: do this in background job
@@ -366,7 +375,7 @@ namespace Gabang.Controls {
         #region Clean Up
 
         private void PostArrange() {
-#if DEBUG
+#if DEBUG && PRINT
             DateTime startTime = DateTime.Now;
 #endif
             EnsureCleanupOperation();
@@ -383,7 +392,7 @@ namespace Gabang.Controls {
                     columnWidth.Value.Frozen = true;
                 }
             }
-#if DEBUG
+#if DEBUG && PRINT
             Debug.WriteLine("VirtualizingGridPanel:PostArrange: {0} msec", (DateTime.Now - startTime).TotalMilliseconds);
 #endif
         }
@@ -398,7 +407,7 @@ namespace Gabang.Controls {
 
         private object OnCleanUp(object args) {
             try {
-#if DEBUG
+#if DEBUG && PRINT
                 DateTime startTime = DateTime.Now;
 #endif
                 int begin = -1;
@@ -429,7 +438,7 @@ namespace Gabang.Controls {
                 foreach (var column in columnsOutsideViewport) {
                     ColumnWidth.Remove(column);
                 }
-#if DEBUG
+#if DEBUG && PRINT
                 Debug.WriteLine("VirtualizingGridPanel:OnCleanUp: {0} msec", (DateTime.Now - startTime).TotalMilliseconds);
 #endif
             } finally {

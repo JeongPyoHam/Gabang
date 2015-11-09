@@ -3,14 +3,43 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
 
 namespace Gabang.Controls {
-    public class VariableGridColumn {
+    internal class VariableGridStripe {
 
-        public double EstimatedWidth {
+        public VariableGridStripe(Orientation orientation) {
+            this.Orientation = orientation;
+        }
+
+        public bool IsColumn {
             get {
-                return 50;
+                return this.Orientation == Orientation.Vertical;
             }
         }
+
+        public bool IsRow {
+            get {
+                return this.Orientation == Orientation.Horizontal;
+            }
+        }
+
+        public Orientation Orientation { get; }
+
+        public MaxDouble ComputedWidth { get; set; }
+
+        public object HeaderContent { get; set; }
+
+        public DataTemplate HeaderTemplate { get; set; }
+    }
+
+    internal class VariableGridColumn {
+
+        public MaxDouble ComputedWidth { get; set; }
+
+        public object HeaderContent { get; set; }
+
+        public DataTemplate HeaderTemplate { get; set; }
     }
 }
