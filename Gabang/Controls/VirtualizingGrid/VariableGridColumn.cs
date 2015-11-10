@@ -12,6 +12,7 @@ namespace Gabang.Controls {
         public VariableGridStack(Orientation stackingDirection, int index) {
             this.Orientation = stackingDirection;
             this.Index = index;
+            this.LayoutSize = new MaxDouble();
         }
 
         public bool IsColumn {
@@ -33,12 +34,12 @@ namespace Gabang.Controls {
         /// <summary>
         /// position in layout (perpendicular to stacking direction)
         /// </summary>
-        public double? LayoutPosition { get; }
+        public double? LayoutPosition { get; set; }
 
         /// <summary>
         /// length in layout (perpendicular to stacking direction)
         /// </summary>
-        public MaxDouble LayoutSize { get; set; }
+        public MaxDouble LayoutSize { get; }
 
         public double GetSizeConstraint() {
             if (LayoutSize.Frozen) {

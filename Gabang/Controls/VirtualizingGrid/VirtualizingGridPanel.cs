@@ -1,4 +1,4 @@
-﻿//#define PRINT
+﻿#define PRINT
 //#define ASSERT
 
 using System;
@@ -179,8 +179,10 @@ namespace Gabang.Controls {
                 && (viewportRow.Count != Generator.RowCount || viewportColumn.Count != Generator.ColumnCount)) {
                 if (isRow) {
                     verticalGrowth = GrowVertically(availableSize.Height, ref desiredSize, ref viewportRow, ref viewportColumn);
+                    Debug.WriteLine("VirtualizingGridPanel:Measure: vertical growth {0}", verticalGrowth);
                 } else {
                     horizontalGrowth = GrowHorizontally(availableSize.Width, ref desiredSize, ref viewportRow, ref viewportColumn);
+                    Debug.WriteLine("VirtualizingGridPanel:Measure: horizontal growth {0}", horizontalGrowth);
                 }
 
                 isRow ^= true;  // toggle
@@ -207,9 +209,14 @@ namespace Gabang.Controls {
 
             // TODO: mark measure pass
             UpdateScrollInfo(desiredSize, availableSize);
+
+            Debug.Assert(desiredSize.Height > availableSize.Height && desiredSize.Width > availableSize.Width);
+
 #if DEBUG && PRINT
             Debug.WriteLine("VirtualizingGridPanel:Measure: {0} msec", (DateTime.Now - startTime).TotalMilliseconds);
 #endif
+            //OnCleanUp(null);
+
             return desiredSize;
         }
 
@@ -252,7 +259,7 @@ namespace Gabang.Controls {
             columnStack.LayoutSize.Max = child.DesiredSize.Width;
             rowStack.LayoutSize.Max = child.DesiredSize.Height;
 
-            return child.DesiredSize;
+            return new Size(columnStack.LayoutSize.Max.Value, rowStack.LayoutSize.Max.Value);
         }
 
         private int GrowVertically(double extent, ref Size desiredSize, ref Range viewportRow, ref Range viewportColumn) {
@@ -344,30 +351,39 @@ namespace Gabang.Controls {
 #if DEBUG && PRINT
             DateTime startTime = DateTime.Now;
 #endif
+            Generator.ComputeStackPosition(_lastMeasureViewportRow, _lastMeasureViewportColumn);
+
             foreach (VariableGridCell child in InternalChildren) {
-                if (_lastMeasureViewportRow.Contains(child.Row)
-                    && _lastMeasureViewportColumn.Contains(child.Column)) {
-                    // arrange
-                    child.Visibility = Visibility.Visible;
+                //if (_lastMeasureViewportRow.Contains(child.Row)
+                //    && _lastMeasureViewportColumn.Contains(child.Column)) {
+                //    // arrange
+                //    child.Visibility = Visibility.Visible;
 
-                    // top
-                    double top = 0.0;
-                    for (int r = _lastMeasureViewportRow.Start; r < child.Row; r++) {
-                        top += RowHeight[r].Max.Value;
-                    }
-                    top += _lastMeasureOffset.Y;
+                    var columnStack = Generator.PrepareStack(Orientation.Vertical, child.Column);
+                    var rowStack = Generator.PrepareStack(Orientation.Horizontal, child.Row);
 
-                    // left
-                    double left = 0.0;
-                    for (int c = _lastMeasureViewportColumn.Start; c < child.Column; c++) {
-                        left += ColumnWidth[c].Max.Value;
-                    }
-                    left += _lastMeasureOffset.X;
+                    //// top
+                    //double top = 0.0;
+                    //for (int r = _lastMeasureViewportRow.Start; r < child.Row; r++) {
+                    //    top += RowHeight[r].Max.Value;
+                    //}
+                    //top += _lastMeasureOffset.Y;
 
-                    child.Arrange(new Rect(left, top, ColumnWidth[child.Column].Max.Value, RowHeight[child.Row].Max.Value));
-                } else {
-                    child.Visibility = Visibility.Collapsed;
-                }
+                    //// left
+                    //double left = 0.0;
+                    //for (int c = _lastMeasureViewportColumn.Start; c < child.Column; c++) {
+                    //    left += ColumnWidth[c].Max.Value;
+                    //}
+                    //left += _lastMeasureOffset.X;
+
+                    child.Arrange(new Rect(
+                        columnStack.LayoutPosition.Value + _lastMeasureOffset.X,
+                        rowStack.LayoutPosition.Value + _lastMeasureOffset.Y,
+                        columnStack.LayoutSize.Max.Value,
+                        rowStack.LayoutSize.Max.Value));
+                //} else {
+                //    child.Visibility = Visibility.Collapsed;    // this cause MeasureOverride again
+                //}
             }
 
 #if DEBUG && PRINT
@@ -425,12 +441,16 @@ namespace Gabang.Controls {
                     RemoveInternalChildRange(cleanBlock.Start, cleanBlock.Count);
                 }
 
+#if DEBUG && PRINT
+                Debug.WriteLine("VirtualizingGridPanel:OnCleanUp 1: {0} msec", (DateTime.Now - startTime).TotalMilliseconds);
+#endif
+
                 // clean up from container generator
                 Generator.RemoveRowsExcept(_lastMeasureViewportRow);
                 Generator.RemoveColumnsExcept(_lastMeasureViewportColumn);
 
 #if DEBUG && PRINT
-                Debug.WriteLine("VirtualizingGridPanel:OnCleanUp: {0} msec", (DateTime.Now - startTime).TotalMilliseconds);
+                Debug.WriteLine("VirtualizingGridPanel:OnCleanUp 2: {0} msec", (DateTime.Now - startTime).TotalMilliseconds);
 #endif
             } finally {
                 _cleanupOperation = null;

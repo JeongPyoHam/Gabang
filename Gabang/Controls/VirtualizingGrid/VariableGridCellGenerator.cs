@@ -1,4 +1,6 @@
-﻿using System;
+﻿//#define PRINT
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -32,6 +34,10 @@ namespace Gabang.Controls {
                 throw new ArgumentOutOfRangeException("columnIndex");
             }
 
+#if DEBUG && PRINT
+            Debug.WriteLine("VariableGridCellGenerator:GenerateAt: {0} {1}", rowIndex, columnIndex);
+#endif
+
             var element = elements[rowIndex, columnIndex];
             if (element != null) {
                 newlyCreated = false;
@@ -50,6 +56,9 @@ namespace Gabang.Controls {
         }
 
         public bool RemoveAt(int rowIndex, int columnIndex) {
+#if DEBUG && PRINT
+            Debug.WriteLine("VariableGridCellGenerator:RemoveAt: {0} {1}", rowIndex, columnIndex);
+#endif
             var element = elements[rowIndex, columnIndex];
 
             if (element != null) {
@@ -69,7 +78,7 @@ namespace Gabang.Controls {
             RemoveStacksExcept(_columns, except);
         }
 
-        private void RemoveStacksExcept(Dictionary<int, VariableGridStack> stackDictionary,  Range except) {
+        private void RemoveStacksExcept(SortedList<int, VariableGridStack> stackDictionary,  Range except) {
             var toBeDeleted = stackDictionary.Keys.Where(key => !except.Contains(key)).ToList();
             foreach (var row in toBeDeleted) {
                 stackDictionary.Remove(row);
@@ -115,7 +124,52 @@ namespace Gabang.Controls {
             }
         }
 
-        private Dictionary<int, VariableGridStack> _rows = new Dictionary<int, VariableGridStack>();
-        private Dictionary<int, VariableGridStack> _columns = new Dictionary<int, VariableGridStack>();
+        public void ComputeStackPosition(Range viewportRow, Range viewportColumn) {
+            ComputeStackPosition(_rows, viewportRow, 0.0);
+            ComputeStackPosition(_columns, viewportColumn, 0.0);
+        }
+
+        private void ComputeStackPosition(SortedList<int, VariableGridStack> stacks, Range viewport, double startingOffset) {
+            double offset = startingOffset;
+            foreach (var key in stacks.Keys) {
+                var stack = stacks[key];
+
+                stack.LayoutPosition = offset;
+                offset += stack.LayoutSize.Max.Value;
+
+                //if (viewport.Contains(key)) {
+                //    stack.LayoutPosition = offset;
+                //    offset += stack.LayoutSize.Max.Value;
+                //} else {
+                //    stack.LayoutPosition = double.PositiveInfinity;
+                //}
+            }
+        }
+
+        private SortedList<int, VariableGridStack> _rows = new SortedList<int, VariableGridStack>();
+        private SortedList<int, VariableGridStack> _columns = new SortedList<int, VariableGridStack>();
+    }
+
+    public class GricStackCollection {
+        private LinkedList<VariableGridStack> _stacks = new LinkedList<VariableGridStack>();
+
+        public GricStackCollection() { }
+
+        public int Start { get; private set; }
+
+        public int Count {
+            get {
+                return _stacks.Count;
+            }
+        }
+
+        public void Insert(int index) {
+        }
+
+        public IEnumerable<VariableGridStack> Enumerable {
+            get {
+                return _stacks;
+            }
+        }
     }
 }

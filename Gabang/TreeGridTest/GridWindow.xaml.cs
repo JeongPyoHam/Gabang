@@ -20,8 +20,8 @@ namespace Gabang.TreeGridTest {
     /// </summary>
     public partial class GridWindow : Window {
 
-        public static int RowCount = 159;
-        public static int ColumnCount = 159;
+        public static int RowCount = 1000;
+        public static int ColumnCount = 1000;
 
         public GridWindow() {
             InitializeComponent();
