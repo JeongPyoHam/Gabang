@@ -93,20 +93,24 @@ namespace Gabang.Controls {
             _columns.Remove(columnIndex);
         }
 
-        public VariableGridStack PrepareStack(Orientation orientation, int index) {
-            if (orientation == Orientation.Vertical) {
-                if (!_columns.ContainsKey(index)) {
-                    _columns[index] = new VariableGridColumn(index);
-                }
-                return _columns[index];
-            } else if (orientation == Orientation.Horizontal) {
-                if (!_rows.ContainsKey(index)) {
-                    _rows[index] = new VariableGridRow(index);
-                }
-                return _rows[index];
+        public VariableGridStack GetColumn(int index) {
+            return GetStack(_columns, index);
+        }
+
+        public VariableGridStack GetRow(int index) {
+            return GetStack(_rows, index);
+        }
+
+        private VariableGridStack GetStack(SortedList<int, VariableGridStack> stacks, int index) {
+            VariableGridStack stack;
+            if (stacks.TryGetValue(index, out stack)) {
+                return stack;
             }
 
-            throw new ArgumentException("PrepareLine can't understand orientation argument");
+            stack = new VariableGridColumn(index);
+            stacks.Add(index, stack);
+
+            return stack;
         }
 
         public void FreezeStacks() {
@@ -136,13 +140,6 @@ namespace Gabang.Controls {
 
                 stack.LayoutPosition = offset;
                 offset += stack.LayoutSize.Max.Value;
-
-                //if (viewport.Contains(key)) {
-                //    stack.LayoutPosition = offset;
-                //    offset += stack.LayoutSize.Max.Value;
-                //} else {
-                //    stack.LayoutPosition = double.PositiveInfinity;
-                //}
             }
         }
 
