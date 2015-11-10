@@ -151,10 +151,6 @@ namespace Gabang.Controls {
         Range _lastMeasureViewportRow = new Range();
         Range _lastMeasureViewportColumn = new Range();
 
-        // TODO: replace dictionary to Row/Column class
-        Dictionary<int, MaxDouble> RowHeight = new Dictionary<int, MaxDouble>();
-        Dictionary<int, MaxDouble> ColumnWidth = new Dictionary<int, MaxDouble>();
-
         protected override Size MeasureOverride(Size availableSize) {
 #if DEBUG && PRINT
             DateTime startTime = DateTime.Now;
@@ -170,10 +166,14 @@ namespace Gabang.Controls {
             int horizontalGrowth = 1;
             int verticalGrowth = 1;
 
-            Size desiredSize = MeasureChild(viewportRow.Start, viewportColumn.Start);
-            viewportRow.Count += 1;
+            // create first cell
+            var rowStack = Generator.PrepareStack(Orientation.Horizontal, viewportRow.Start);
+            var columnStack = Generator.PrepareStack(Orientation.Vertical, viewportColumn.Start);
+            Size desiredSize = MeasureChild(rowStack, columnStack);
+            viewportRow.Count += verticalGrowth;
             viewportColumn.Count += horizontalGrowth;
 
+            // grows area from first cell to fill available area
             bool isRow = _scrollHint.HasFlag(ScrollHint.Vertial);
             while ((horizontalGrowth != 0 || verticalGrowth != 0)
                 && (viewportRow.Count != Generator.RowCount || viewportColumn.Count != Generator.ColumnCount)) {
@@ -230,48 +230,29 @@ namespace Gabang.Controls {
             _scrollHint = ScrollHint.None;
         }
 
-        private Size MeasureChild(int row, int column) {
-            if (_lastMeasureViewportRow.Contains(row) && _lastMeasureViewportColumn.Contains(column)) {
-                Debug.Assert(RowHeight.ContainsKey(row) && ColumnWidth.ContainsKey(column));
+        private Size MeasureChild(VariableGridStack rowStack, VariableGridStack columnStack) {
+            double widthConstraint = columnStack.GetSizeConstraint();
+            double heightConstraint = rowStack.GetSizeConstraint();
 
-                // TODO: measure again? maybe, not
-                return new Size(ColumnWidth[column].Max.Value, RowHeight[row].Max.Value);
-            } else {
-                bool newlyCreated;
-                var child = Generator.GenerateAt(row, column, out newlyCreated);
-                if (newlyCreated) {
-                    AddInternalChild(child);
-                } else {
-                    Debug.Assert(InternalChildren.Contains(child));
-                }
-
-                bool updateWidth = true; double widthConstraint = double.PositiveInfinity;
-                if (!ColumnWidth.ContainsKey(column)) {
-                    ColumnWidth[column] = new MaxDouble();
-                } else if (ColumnWidth[column].Frozen) {
-                    updateWidth = false;
-                    widthConstraint = ColumnWidth[column].Max.Value;
-                }
-
-                bool updateHeight = true; double heightConstraint = double.PositiveInfinity;
-                if (!RowHeight.ContainsKey(row)) {
-                    RowHeight[row] = new MaxDouble();
-                } else if (RowHeight[row].Frozen) {
-                    updateHeight = false;
-                    heightConstraint = RowHeight[row].Max.Value;
-                }
-
-                child.Measure(new Size(widthConstraint, heightConstraint));
-
-                if (updateWidth) {
-                    ColumnWidth[column].Max = child.DesiredSize.Width;
-                }
-                if (updateHeight) {
-                    RowHeight[row].Max = child.DesiredSize.Height;
-                }
-
-                return child.DesiredSize;
+            if (!double.IsPositiveInfinity(widthConstraint) && !double.IsPositiveInfinity(heightConstraint)) {
+                // both row and column suggest non-inifite size, then use it
+                return new Size(columnStack.LayoutSize.Max.Value, rowStack.LayoutSize.Max.Value);
             }
+
+            bool newlyCreated;
+            var child = Generator.GenerateAt(rowStack.Index, columnStack.Index, out newlyCreated);
+            if (newlyCreated) {
+                AddInternalChild(child);
+            } else {
+                Debug.Assert(InternalChildren.Contains(child));
+            }
+
+            child.Measure(new Size(widthConstraint, heightConstraint));
+
+            columnStack.LayoutSize.Max = child.DesiredSize.Width;
+            rowStack.LayoutSize.Max = child.DesiredSize.Height;
+
+            return child.DesiredSize;
         }
 
         private int GrowVertically(double extent, ref Size desiredSize, ref Range viewportRow, ref Range viewportColumn) {
@@ -280,7 +261,8 @@ namespace Gabang.Controls {
 
             // grow forward
             while ((desiredSize.Height < extent) && ((growStartAt + growth) < Generator.RowCount)) {
-                MeasureRow(growStartAt + growth, ref desiredSize, ref viewportColumn);
+                var rowStack = Generator.PrepareStack(Orientation.Horizontal, growStartAt + growth);
+                MeasureRow(rowStack, ref desiredSize, ref viewportColumn);
                 growth += 1;
             }
 
@@ -288,7 +270,8 @@ namespace Gabang.Controls {
             int growthBackward = 0;
             int growBackwardStartAt = viewportRow.Start - 1;
             while ((desiredSize.Height < extent) && (growBackwardStartAt - growthBackward >= 0)) {
-                MeasureRow(growBackwardStartAt - growthBackward, ref desiredSize, ref viewportColumn);
+                var rowStack = Generator.PrepareStack(Orientation.Horizontal, growBackwardStartAt - growthBackward);
+                MeasureRow(rowStack, ref desiredSize, ref viewportColumn);
                 growthBackward += 1;
             }
 
@@ -305,7 +288,8 @@ namespace Gabang.Controls {
 
             // grow forward
             while ((desiredSize.Width < extent) && ((growStartAt + growth) < Generator.ColumnCount)) {
-                MeasureColumn(growStartAt + growth, ref desiredSize, ref viewportRow);
+                var columnStack = Generator.PrepareStack(Orientation.Vertical, growStartAt + growth);
+                MeasureColumn(columnStack, ref desiredSize, ref viewportRow);
                 growth += 1;
             }
 
@@ -313,7 +297,8 @@ namespace Gabang.Controls {
             int growthBackward = 0;
             int growBackwardStartAt = viewportColumn.Start - 1;
             while ((desiredSize.Width < extent) && ((growBackwardStartAt - growthBackward >= 0))) {
-                MeasureColumn(growBackwardStartAt - growthBackward, ref desiredSize, ref viewportRow);
+                var columnStack = Generator.PrepareStack(Orientation.Vertical, growBackwardStartAt - growthBackward);
+                MeasureColumn(columnStack, ref desiredSize, ref viewportRow);
                 growthBackward += 1;
             }
 
@@ -323,26 +308,28 @@ namespace Gabang.Controls {
             return growth;
         }
 
-        private void MeasureRow(int row, ref Size desiredSize, ref Range viewportColumn) {
+        private void MeasureRow(VariableGridStack rowStack, ref Size desiredSize, ref Range viewportColumn) {
             double width = 0.0;
             int column = viewportColumn.Start;
             while (viewportColumn.Contains(column) && column < Generator.ColumnCount) {
-                Size childDesiredSize = MeasureChild(row, column);
+                var columnStack = Generator.PrepareStack(Orientation.Vertical, column);
+                Size childDesiredSize = MeasureChild(rowStack, columnStack);
 
                 width += childDesiredSize.Width;
 
                 column++;
             }
 
-            desiredSize.Height += RowHeight[row].Max.Value;
+            desiredSize.Height += rowStack.LayoutSize.Max.Value;
             desiredSize.Width = width;
         }
 
-        private void MeasureColumn(int column, ref Size desiredSize, ref Range viewportRow) {
+        private void MeasureColumn(VariableGridStack columnStack, ref Size desiredSize, ref Range viewportRow) {
             double height = 0.0;
             int row = viewportRow.Start;
             while (viewportRow.Contains(row) && row < Generator.RowCount) {
-                Size childDesiredSize = MeasureChild(row, column);
+                var rowStack = Generator.PrepareStack(Orientation.Horizontal, row);
+                Size childDesiredSize = MeasureChild(rowStack, columnStack);
 
                 height += childDesiredSize.Height;
 
@@ -350,7 +337,7 @@ namespace Gabang.Controls {
             }
 
             desiredSize.Height = height;
-            desiredSize.Width += ColumnWidth[column].Max.Value;
+            desiredSize.Width += columnStack.LayoutSize.Max.Value;
         }
 
         protected override Size ArrangeOverride(Size finalSize) {
@@ -401,18 +388,7 @@ namespace Gabang.Controls {
 #endif
             EnsureCleanupOperation();
 
-            // freeze remaining row and columns
-            foreach (var rowHeight in RowHeight) {
-                if (rowHeight.Value.Max.HasValue) {
-                    rowHeight.Value.Frozen = true;
-                }
-            }
-
-            foreach (var columnWidth in ColumnWidth) {
-                if (columnWidth.Value.Max.HasValue) {
-                    columnWidth.Value.Frozen = true;
-                }
-            }
+            Generator.FreezeStacks();
 #if DEBUG && PRINT
             Debug.WriteLine("VirtualizingGridPanel:PostArrange: {0} msec", (DateTime.Now - startTime).TotalMilliseconds);
 #endif
@@ -431,6 +407,7 @@ namespace Gabang.Controls {
 #if DEBUG && PRINT
                 DateTime startTime = DateTime.Now;
 #endif
+                // Remove from visual children
                 int begin = -1;
                 while (true) {
                     Range cleanBlock = FindFirstChildrenRangeOutsideViewport(ref begin);
@@ -448,17 +425,10 @@ namespace Gabang.Controls {
                     RemoveInternalChildRange(cleanBlock.Start, cleanBlock.Count);
                 }
 
-                // TODO: move to clean up task, or create Row Column cache
-                var rowsOutsideViewport = RowHeight.Keys.Where(key => !_lastMeasureViewportRow.Contains(key)).ToList();
-                foreach (var row in rowsOutsideViewport) {
-                    RowHeight.Remove(row);
-                }
+                // clean up from container generator
+                Generator.RemoveRowsExcept(_lastMeasureViewportRow);
+                Generator.RemoveColumnsExcept(_lastMeasureViewportColumn);
 
-                // TODO: move to clean up task, or create Row Column cache
-                var columnsOutsideViewport = ColumnWidth.Keys.Where(key => !_lastMeasureViewportColumn.Contains(key)).ToList();
-                foreach (var column in columnsOutsideViewport) {
-                    ColumnWidth.Remove(column);
-                }
 #if DEBUG && PRINT
                 Debug.WriteLine("VirtualizingGridPanel:OnCleanUp: {0} msec", (DateTime.Now - startTime).TotalMilliseconds);
 #endif

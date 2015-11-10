@@ -49,7 +49,6 @@
     <Compile Include="DummyControl.cs" />
     <Compile Include="VirtualizingGrid\ConstantCountList.cs" />
     <Compile Include="VirtualizingGrid\ConstantList.cs" />
-    <Compile Include="VirtualizingGrid\GridPresenter.cs" />
     <Compile Include="VirtualizingGrid\IntegerList.cs" />
     <Compile Include="VirtualizingGrid\MaxDouble.cs" />
     <Compile Include="VirtualizingGrid\Range.cs" />

@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 
 namespace Gabang.Controls {
     public class VariableGridCellGenerator {
@@ -59,5 +60,62 @@ namespace Gabang.Controls {
 
             return false;
         }
+
+        public void RemoveRowsExcept(Range except) {
+            RemoveStacksExcept(_rows, except);
+        }
+
+        public void RemoveColumnsExcept(Range except) {
+            RemoveStacksExcept(_columns, except);
+        }
+
+        private void RemoveStacksExcept(Dictionary<int, VariableGridStack> stackDictionary,  Range except) {
+            var toBeDeleted = stackDictionary.Keys.Where(key => !except.Contains(key)).ToList();
+            foreach (var row in toBeDeleted) {
+                stackDictionary.Remove(row);
+            }
+        }
+
+        public void RemoveRow(int rowIndex) {
+            _rows.Remove(rowIndex);
+        }
+
+        public void RemoveColumn(int columnIndex) {
+            _columns.Remove(columnIndex);
+        }
+
+        public VariableGridStack PrepareStack(Orientation orientation, int index) {
+            if (orientation == Orientation.Vertical) {
+                if (!_columns.ContainsKey(index)) {
+                    _columns[index] = new VariableGridColumn(index);
+                }
+                return _columns[index];
+            } else if (orientation == Orientation.Horizontal) {
+                if (!_rows.ContainsKey(index)) {
+                    _rows[index] = new VariableGridRow(index);
+                }
+                return _rows[index];
+            }
+
+            throw new ArgumentException("PrepareLine can't understand orientation argument");
+        }
+
+        public void FreezeStacks() {
+            // freeze remaining row and columns
+            foreach (var row in _rows.Values) {
+                if (row.LayoutSize.Max.HasValue) {
+                    row.LayoutSize.Frozen = true;
+                }
+            }
+
+            foreach (var column in _columns.Values) {
+                if (column.LayoutSize.Max.HasValue) {
+                    column.LayoutSize.Frozen = true;
+                }
+            }
+        }
+
+        private Dictionary<int, VariableGridStack> _rows = new Dictionary<int, VariableGridStack>();
+        private Dictionary<int, VariableGridStack> _columns = new Dictionary<int, VariableGridStack>();
     }
 }

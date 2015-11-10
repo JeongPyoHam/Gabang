@@ -7,10 +7,11 @@ using System.Windows;
 using System.Windows.Controls;
 
 namespace Gabang.Controls {
-    internal class VariableGridStripe {
+    public class VariableGridStack {
 
-        public VariableGridStripe(Orientation orientation) {
-            this.Orientation = orientation;
+        public VariableGridStack(Orientation stackingDirection, int index) {
+            this.Orientation = stackingDirection;
+            this.Index = index;
         }
 
         public bool IsColumn {
@@ -27,19 +28,38 @@ namespace Gabang.Controls {
 
         public Orientation Orientation { get; }
 
-        public MaxDouble ComputedWidth { get; set; }
+        public int Index { get; }
+
+        /// <summary>
+        /// position in layout (perpendicular to stacking direction)
+        /// </summary>
+        public double? LayoutPosition { get; }
+
+        /// <summary>
+        /// length in layout (perpendicular to stacking direction)
+        /// </summary>
+        public MaxDouble LayoutSize { get; set; }
+
+        public double GetSizeConstraint() {
+            if (LayoutSize.Frozen) {
+                return LayoutSize.Max.Value;
+            }
+
+            return double.PositiveInfinity;
+        }
+
 
         public object HeaderContent { get; set; }
 
         public DataTemplate HeaderTemplate { get; set; }
     }
 
-    internal class VariableGridColumn : VariableGridStripe {
+    public class VariableGridColumn : VariableGridStack {
 
-        public VariableGridColumn() : base(Orientation.Vertical) { }
+        public VariableGridColumn(int index) : base(Orientation.Vertical, index) { }
     }
 
-    internal class VariableGridRow : VariableGridStripe {
-        public VariableGridRow() : base(Orientation.Horizontal) { }
+    public class VariableGridRow : VariableGridStack {
+        public VariableGridRow(int index) : base(Orientation.Horizontal, index) { }
     }
 }
