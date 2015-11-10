@@ -151,12 +151,32 @@ namespace Gabang.Controls {
         Range _lastMeasureViewportColumn = new Range();
 
         protected override Size MeasureOverride(Size availableSize) {
+            EnsurePrerequisite();
+
+            // TODO: check infinity
+            EnsureMeasureOperation(availableSize);
+
+            return availableSize;
+        }
+
+        private DispatcherOperation _measureOperation;
+
+        private void EnsureMeasureOperation(Size availableSize) {
+            if (_measureOperation == null) {
+                _measureOperation = Dispatcher.BeginInvoke(DispatcherPriority.Background, new DispatcherOperationCallback(OnMeasure), availableSize);
+            }
+        }
+
+        private void ResetMeasureOperation() {
+            _measureOperation = null;
+        }
+
+        private object OnMeasure(object arg) {
 #if PANELTRACE
             DateTime startTime = DateTime.Now;
             _childMeasure = new TimeSpan();
 #endif
-
-            EnsurePrerequisite();
+            Size availableSize = (Size)arg;
 
             // start from scroll offset
             Range viewportRow = new Range();
@@ -215,10 +235,13 @@ namespace Gabang.Controls {
             UpdateScrollInfo(desiredSize, availableSize);
 
 #if PANELTRACE
-            Trace(TraceLevel.Info, "VirtualizingGridPanel:Measure: row Couunt {0} column Count {1}", _lastMeasureViewportRow.Count, _lastMeasureViewportColumn.Count);
+            Trace(TraceLevel.Info, "VirtualizingGridPanel:Measure: row Count {0} column Count {1}", _lastMeasureViewportRow.Count, _lastMeasureViewportColumn.Count);
             Trace(TraceLevel.Info, "VirtualizingGridPanel:Measure: ChildMeasure {0} msec", _childMeasure.TotalMilliseconds);
             Trace(TraceLevel.Info, "VirtualizingGridPanel:Measure: {0} msec", (DateTime.Now - startTime).TotalMilliseconds);
 #endif
+
+            ResetMeasureOperation();
+
             return desiredSize;
         }
 
@@ -364,15 +387,16 @@ namespace Gabang.Controls {
 #if PANELTRACE
             DateTime startTime = DateTime.Now;
 #endif
-            Generator.ComputeStackPosition(_lastMeasureViewportRow, _lastMeasureViewportColumn);
+            double computedRowOffset, computedColumnOffset;
+            Generator.ComputeStackPosition(_lastMeasureViewportRow, _lastMeasureViewportColumn, out computedRowOffset, out computedColumnOffset);
 
             foreach (VariableGridCell child in InternalChildren) {
                 var columnStack = Generator.GetColumn(child.Column);
                 var rowStack = Generator.GetRow(child.Row);
 
                 Rect rect = new Rect(
-                    columnStack.LayoutPosition.Value + _lastMeasureOffset.X,
-                    rowStack.LayoutPosition.Value + _lastMeasureOffset.Y,
+                    columnStack.LayoutPosition.Value - computedColumnOffset + _lastMeasureOffset.X,
+                    rowStack.LayoutPosition.Value - computedRowOffset + _lastMeasureOffset.Y,
                     columnStack.LayoutSize.Max.Value,
                     rowStack.LayoutSize.Max.Value);
 #if PANELTRACE
@@ -398,7 +422,7 @@ namespace Gabang.Controls {
 #endif
             EnsureCleanupOperation();
 
-            Generator.FreezeStacks();
+            Generator.FreezeLayoutSize();
 #if PANELTRACE
             Trace(TraceLevel.Info, "VirtualizingGridPanel:PostArrange: {0} msec", (DateTime.Now - startTime).TotalMilliseconds);
 #endif

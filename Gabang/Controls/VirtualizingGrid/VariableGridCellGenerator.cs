@@ -16,15 +16,11 @@ namespace Gabang.Controls {
             _dataSource = dataSource;
             RowCount = _dataSource.RowCount;
             ColumnCount = _dataSource.ColumnCount;
-
-            elements = new VariableGridCell[RowCount, ColumnCount];
         }
 
         public int RowCount { get; }
 
         public int ColumnCount { get; }
-
-        private VariableGridCell[,] elements;  // TODO: do not use 2D element
 
         public VariableGridCell GenerateAt(int rowIndex, int columnIndex, out bool newlyCreated) {
             if (rowIndex < 0 || rowIndex >= RowCount) {
@@ -38,7 +34,7 @@ namespace Gabang.Controls {
             Debug.WriteLine("VariableGridCellGenerator:GenerateAt: {0} {1}", rowIndex, columnIndex);
 #endif
 
-            var element = elements[rowIndex, columnIndex];
+            var element = _rows[rowIndex].GetItemAt(columnIndex);
             if (element != null) {
                 newlyCreated = false;
                 return element;
@@ -49,7 +45,8 @@ namespace Gabang.Controls {
             element.Row = rowIndex;
             element.Column = columnIndex;
 
-            elements[rowIndex, columnIndex] = element;
+            _rows[rowIndex].SetItemAt(columnIndex, element);
+            _columns[columnIndex].SetItemAt(rowIndex, element);
 
             newlyCreated = true;
             return element;
@@ -59,11 +56,15 @@ namespace Gabang.Controls {
 #if DEBUG && PRINT
             Debug.WriteLine("VariableGridCellGenerator:RemoveAt: {0} {1}", rowIndex, columnIndex);
 #endif
-            var element = elements[rowIndex, columnIndex];
+            var element = _rows[rowIndex].GetItemAt(columnIndex);
+            Debug.Assert(object.Equals(element, _columns[columnIndex].GetItemAt(rowIndex)));
 
             if (element != null) {
                 element.CleanUp(_dataSource[rowIndex][columnIndex]);
-                elements[rowIndex, columnIndex] = null; // TODO: give a chance each element to clean up such as unregistering event handler
+
+                _rows[rowIndex].ClearAt(columnIndex);
+                _columns[columnIndex].ClearAt(rowIndex);
+
                 return true;
             }
 
@@ -83,14 +84,6 @@ namespace Gabang.Controls {
             foreach (var row in toBeDeleted) {
                 stackDictionary.Remove(row);
             }
-        }
-
-        public void RemoveRow(int rowIndex) {
-            _rows.Remove(rowIndex);
-        }
-
-        public void RemoveColumn(int columnIndex) {
-            _columns.Remove(columnIndex);
         }
 
         public VariableGridStack GetColumn(int index) {
@@ -113,7 +106,7 @@ namespace Gabang.Controls {
             return stack;
         }
 
-        public void FreezeStacks() {
+        public void FreezeLayoutSize() {
             // freeze remaining row and columns
             foreach (var row in _rows.Values) {
                 if (row.LayoutSize.Max.HasValue) {
@@ -128,45 +121,28 @@ namespace Gabang.Controls {
             }
         }
 
-        public void ComputeStackPosition(Range viewportRow, Range viewportColumn) {
-            ComputeStackPosition(_rows, viewportRow, 0.0);
-            ComputeStackPosition(_columns, viewportColumn, 0.0);
+        public void ComputeStackPosition(Range viewportRow, Range viewportColumn, out double computedRowOffset, out double computedColumnOffset) {
+            ComputeStackPosition(_rows, viewportRow.Start, out computedRowOffset);
+            ComputeStackPosition(_columns, viewportColumn.Start, out computedColumnOffset);
         }
 
-        private void ComputeStackPosition(SortedList<int, VariableGridStack> stacks, Range viewport, double startingOffset) {
-            double offset = startingOffset;
+        private void ComputeStackPosition(SortedList<int, VariableGridStack> stacks, int startingIndex, out double computedOffset) {
+            double offset = 0;
+            computedOffset = 0;
             foreach (var key in stacks.Keys) {
                 var stack = stacks[key];
+
+                if (key == startingIndex) {
+                    computedOffset = offset;
+                }
 
                 stack.LayoutPosition = offset;
                 offset += stack.LayoutSize.Max.Value;
             }
         }
 
+        // TODO: improve to better collection
         private SortedList<int, VariableGridStack> _rows = new SortedList<int, VariableGridStack>();
         private SortedList<int, VariableGridStack> _columns = new SortedList<int, VariableGridStack>();
-    }
-
-    public class GricStackCollection {
-        private LinkedList<VariableGridStack> _stacks = new LinkedList<VariableGridStack>();
-
-        public GricStackCollection() { }
-
-        public int Start { get; private set; }
-
-        public int Count {
-            get {
-                return _stacks.Count;
-            }
-        }
-
-        public void Insert(int index) {
-        }
-
-        public IEnumerable<VariableGridStack> Enumerable {
-            get {
-                return _stacks;
-            }
-        }
     }
 }

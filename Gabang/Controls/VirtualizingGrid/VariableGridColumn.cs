@@ -53,6 +53,28 @@ namespace Gabang.Controls {
         public object HeaderContent { get; set; }
 
         public DataTemplate HeaderTemplate { get; set; }
+
+        public void SetItemAt(int index, VariableGridCell item) {
+            _cells[index] = item;
+        }
+
+        public VariableGridCell GetItemAt(int index) {
+            VariableGridCell cell;
+            if (_cells.TryGetValue(index, out cell)) {
+                return cell;
+            }
+            return null;
+        }
+
+        public void ClearAt(int index) {
+            _cells.Remove(index);
+        }
+
+        public void ClearItems() {
+            _cells.Clear();
+        }
+
+        private Dictionary<int, VariableGridCell> _cells = new Dictionary<int, VariableGridCell>();
     }
 
     public class VariableGridColumn : VariableGridStack {
