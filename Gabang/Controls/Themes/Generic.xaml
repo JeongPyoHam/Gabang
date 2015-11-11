@@ -157,7 +157,7 @@
         <Setter Property="ScrollViewer.CanContentScroll" Value="true"/>
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Visible" />
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Visible" />
-        <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel"/>
+        <Setter Property="VirtualizingPanel.ScrollUnit" Value="Item" />
         <Setter Property="VirtualizingPanel.CacheLength" Value="10"/>
         <Setter Property="VirtualizingPanel.CacheLengthUnit" Value="Pixel"/>
         <Setter Property="VirtualizingPanel.IsVirtualizing" Value="true"/>

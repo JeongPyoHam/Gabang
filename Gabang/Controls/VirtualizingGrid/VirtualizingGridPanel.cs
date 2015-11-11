@@ -150,14 +150,15 @@ namespace Gabang.Controls {
 
         #endregion
 
-        #region Overrides
+        #region Overrides (Measure/Arrange)
 
         Point _lastMeasureOffset = new Point();
         Size _lastMeasureAvailableSize = new Size();
-        Size _lastMeasureDesiredSize = new Size();
         Range _lastMeasureViewportRow = new Range();
         Range _lastMeasureViewportColumn = new Range();
-
+        bool _isRow = true;
+        Size _lastMeasureStepDesiredSize = new Size();
+        TimeSpan OneStepTimeLimit;
         bool MeasureBackGround = true;
 
         protected override Size MeasureOverride(Size availableSize) {
@@ -191,83 +192,6 @@ namespace Gabang.Controls {
             _measureOperation = null;
         }
 
-        private object OnMeasure(object arg) {
-#if PANELTRACE
-            DateTime startTime = DateTime.Now;
-            _childMeasure = new TimeSpan();
-#endif
-            Size availableSize = (Size)arg;
-
-            // start from scroll offset
-            Range viewportRow = new Range();
-            viewportRow.Start = (int)VerticalOffset;
-            Range viewportColumn = new Range();
-            viewportColumn.Start = (int)HorizontalOffset;
-
-            int horizontalGrowth = 1;
-            int verticalGrowth = 1;
-
-            // create first cell
-            var rowStack = Generator.GetRow(viewportRow.Start);
-            var columnStack = Generator.GetColumn(viewportColumn.Start);
-            Size desiredSize = MeasureChild(rowStack, columnStack);
-            viewportRow.Count += verticalGrowth;
-            viewportColumn.Count += horizontalGrowth;
-
-            // grows area from first cell to fill available area
-            bool isRow = _scrollHint.HasFlag(ScrollHint.Vertial);
-            while ((horizontalGrowth != 0 || verticalGrowth != 0)
-                && (viewportRow.Count != Generator.RowCount || viewportColumn.Count != Generator.ColumnCount)) {
-                if (isRow) {
-                    verticalGrowth = GrowVertically(availableSize.Height, ref desiredSize, ref viewportRow, ref viewportColumn);
-#if PANELTRACE
-                    Trace(TraceLevel.Info, "VirtualizingGridPanel:Measure: vertical growth {0}", verticalGrowth);
-#endif
-                } else {
-                    horizontalGrowth = GrowHorizontally(availableSize.Width, ref desiredSize, ref viewportRow, ref viewportColumn);
-#if PANELTRACE
-                    Trace(TraceLevel.Info, "VirtualizingGridPanel:Measure: horizontal growth {0}", horizontalGrowth);
-#endif
-                }
-
-                isRow ^= true;  // toggle
-            }
-
-            _lastMeasureViewportRow = viewportRow;
-            _lastMeasureViewportColumn = viewportColumn;
-            _lastMeasureDesiredSize = desiredSize;
-
-            if (desiredSize.Height > availableSize.Height) {
-                if (_lastMeasureViewportRow.Start == 0) {
-                    _lastMeasureOffset.Y = 0;
-                } else if (_lastMeasureViewportRow.Start + _lastMeasureViewportRow.Count >= Generator.RowCount) {   // BUG: last time scroll a little bit more than one item
-                    _lastMeasureOffset.Y = availableSize.Height - desiredSize.Height;
-                }
-            }
-            if (desiredSize.Width > availableSize.Width) {
-                if (_lastMeasureViewportColumn.Start == 0) {
-                    _lastMeasureOffset.X = 0;
-                } else if (_lastMeasureViewportColumn.Start + _lastMeasureViewportColumn.Count >= Generator.ColumnCount) {
-                    _lastMeasureOffset.X = availableSize.Width - desiredSize.Width;
-                }
-            }
-
-            UpdateScrollInfo();
-
-#if PANELTRACE
-            Trace(TraceLevel.Info, "VirtualizingGridPanel:Measure: row Count {0} column Count {1}", _lastMeasureViewportRow.Count, _lastMeasureViewportColumn.Count);
-            Trace(TraceLevel.Info, "VirtualizingGridPanel:Measure: ChildMeasure {0} msec", _childMeasure.TotalMilliseconds);
-            Trace(TraceLevel.Info, "VirtualizingGridPanel:Measure: {0} msec", (DateTime.Now - startTime).TotalMilliseconds);
-#endif
-
-            ResetMeasureOperation();
-
-            return desiredSize;
-        }
-
-        bool _isRow = true;
-        Size _lastMeasureStepDesiredSize = new Size();
-        TimeSpan OneStepTimeLimit;
         private object OnMeasureStep(object arg) {
 #if PANELTRACE
             DateTime startTime = DateTime.Now;
@@ -293,9 +217,9 @@ namespace Gabang.Controls {
 
             do {
                 if (_isRow) {
-                    GrowVerticallyOneStep(_lastMeasureAvailableSize.Height, ref _lastMeasureStepDesiredSize, ref _lastMeasureViewportRow, ref _lastMeasureViewportColumn);
+                    GrowVertically(_lastMeasureAvailableSize.Height, ref _lastMeasureStepDesiredSize, ref _lastMeasureViewportRow, ref _lastMeasureViewportColumn);
                 } else {
-                    GrowHorizontallyOneStep(_lastMeasureAvailableSize.Width, ref _lastMeasureStepDesiredSize, ref _lastMeasureViewportRow, ref _lastMeasureViewportColumn);
+                    GrowHorizontally(_lastMeasureAvailableSize.Width, ref _lastMeasureStepDesiredSize, ref _lastMeasureViewportRow, ref _lastMeasureViewportColumn);
                 }
                 _isRow ^= true;
             } while (DateTime.Now - startTime < OneStepTimeLimit && ShoulContinueGrowing());
@@ -447,7 +371,7 @@ namespace Gabang.Controls {
             return new Size(columnStack.LayoutSize.Max.Value, rowStack.LayoutSize.Max.Value);
         }
 
-        private int GrowVerticallyOneStep(double extent, ref Size desiredSize, ref Range viewportRow, ref Range viewportColumn) {
+        private int GrowVertically(double extent, ref Size desiredSize, ref Range viewportRow, ref Range viewportColumn) {
             int growth = 0;
             int growStartAt = viewportRow.Start + viewportRow.Count;
 
@@ -491,41 +415,7 @@ namespace Gabang.Controls {
             return growth + growthBackward;
         }
 
-        private int GrowVertically(double extent, ref Size desiredSize, ref Range viewportRow, ref Range viewportColumn) {
-            int growth = 0;
-            int growStartAt = viewportRow.Start + viewportRow.Count;
-
-            // grow forward
-            while ((desiredSize.Height < extent) && ((growStartAt + growth) < Generator.RowCount)) {
-                var rowStack = Generator.GetRow(growStartAt + growth);
-                Size rowSize = MeasureRow(rowStack, ref viewportColumn);
-
-                desiredSize.Height += rowSize.Height;
-                desiredSize.Width = rowSize.Width;
-
-                growth += 1;
-            }
-
-            // grow backward
-            int growthBackward = 0;
-            int growBackwardStartAt = viewportRow.Start - 1;
-            while ((desiredSize.Height < extent) && (growBackwardStartAt - growthBackward >= 0)) {
-                var rowStack = Generator.GetRow(growBackwardStartAt - growthBackward);
-                Size rowSize = MeasureRow(rowStack, ref viewportColumn);
-
-                desiredSize.Height += rowSize.Height;
-                desiredSize.Width = rowSize.Width;
-
-                growthBackward += 1;
-            }
-
-            viewportRow.Start -= growthBackward;
-            viewportRow.Count += growth + growthBackward;
-
-            return growth + growthBackward;
-        }
-
-        private int GrowHorizontallyOneStep(double extent, ref Size desiredSize, ref Range viewportRow, ref Range viewportColumn) {
+        private int GrowHorizontally(double extent, ref Size desiredSize, ref Range viewportRow, ref Range viewportColumn) {
             int growth = 0;
             int growStartAt = viewportColumn.Start + viewportColumn.Count;
 
@@ -554,40 +444,6 @@ namespace Gabang.Controls {
             }
             // grow backward again to fit size
             else if ((desiredSize.Width < extent) && ((growBackwardStartAt - growthBackward >= 0))) {
-                var columnStack = Generator.GetColumn(growBackwardStartAt - growthBackward);
-                Size columnSize = MeasureColumn(columnStack, ref viewportRow);
-
-                desiredSize.Height = columnSize.Height;
-                desiredSize.Width += columnSize.Width;
-
-                growthBackward += 1;
-            }
-
-            viewportColumn.Start -= growthBackward;
-            viewportColumn.Count += growth + growthBackward;
-
-            return growth;
-        }
-
-        private int GrowHorizontally(double extent, ref Size desiredSize, ref Range viewportRow, ref Range viewportColumn) {
-            int growth = 0;
-            int growStartAt = viewportColumn.Start + viewportColumn.Count;
-
-            // grow forward
-            while ((desiredSize.Width < extent) && ((growStartAt + growth) < Generator.ColumnCount)) {
-                var columnStack = Generator.GetColumn(growStartAt + growth);
-                Size columnSize = MeasureColumn(columnStack, ref viewportRow);
-
-                desiredSize.Height = columnSize.Height;
-                desiredSize.Width += columnSize.Width;
-
-                growth += 1;
-            }
-
-            // grow backward
-            int growthBackward = 0;
-            int growBackwardStartAt = viewportColumn.Start - 1;
-            while ((desiredSize.Width < extent) && ((growBackwardStartAt - growthBackward >= 0))) {
                 var columnStack = Generator.GetColumn(growBackwardStartAt - growthBackward);
                 Size columnSize = MeasureColumn(columnStack, ref viewportRow);
 
@@ -791,8 +647,8 @@ namespace Gabang.Controls {
                 throw new NotSupportedException($"{typeof(VariableGridPanel)} supports onlly VirtualizationMode=\"Standard\"");
             }
 
-            if (GetScrollUnit(owningItemsControl) != ScrollUnit.Pixel) {
-                throw new NotSupportedException($"{typeof(VariableGridPanel)} supports onlly ScrollUnit=\"Pixel\"");
+            if (GetScrollUnit(owningItemsControl) != ScrollUnit.Item) {
+                throw new NotSupportedException($"{typeof(VariableGridPanel)} supports onlly ScrollUnit=\"Item\"");
             }
 
             CacheLength = GetCacheLength(owningItemsControl);
