@@ -122,8 +122,17 @@ namespace Gabang.Controls {
         }
 
         public void ComputeStackPosition(Range viewportRow, Range viewportColumn, out double computedRowOffset, out double computedColumnOffset) {
-            ComputeStackPosition(_rows, viewportRow.Start, out computedRowOffset);
-            ComputeStackPosition(_columns, viewportColumn.Start, out computedColumnOffset);
+            if (viewportRow.Count > 0) {
+                ComputeStackPosition(_rows, viewportRow.Start, out computedRowOffset);
+            } else {
+                computedRowOffset = 0;
+            }
+
+            if (viewportColumn.Count > 0) {
+                ComputeStackPosition(_columns, viewportColumn.Start, out computedColumnOffset);
+            } else {
+                computedColumnOffset = 0;
+            }
         }
 
         private void ComputeStackPosition(SortedList<int, VariableGridStack> stacks, int startingIndex, out double computedOffset) {

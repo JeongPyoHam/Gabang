@@ -1,4 +1,5 @@
-﻿#define PANELTRACE
+﻿//#define PANELTRACE
+//#define PANELASSERT
 
 using System;
 using System.Collections.Generic;
@@ -96,33 +97,39 @@ namespace Gabang.Controls {
         private ScrollHint _scrollHint = ScrollHint.None;
 
         public void SetHorizontalOffset(double offset) {
-            if (offset > ExtentWidth - ViewportWidth) {
-                offset = ExtentWidth - ViewportWidth;
-            }
-            if (offset < 0) {
-                offset = 0;
-            }
+            offset = CoerceOffset(offset, ViewportWidth, ExtentWidth);
 
-            if (HorizontalOffset != offset) {
+            if (HorizontalOffset != offset) {   // TODO: use close instead of equality as it is double
                 _scrollHint |= ScrollHint.Horizontal;
                 HorizontalOffset = offset;
-                InvalidateMeasure();    // TODO: if IsVirtualizing==false, InvalidaArrange() should be enough
+                InvalidateMeasure();
             }
         }
 
         public void SetVerticalOffset(double offset) {
-            if (offset > ExtentHeight - ViewportHeight) {
-                offset = ExtentHeight - ViewportHeight;
-            }
-            if (offset < 0) {
-                offset = 0;
-            }
+            offset = CoerceOffset(offset, ViewportHeight, ExtentHeight);
 
             if (VerticalOffset != offset) {
                 _scrollHint |= ScrollHint.Vertial;
                 VerticalOffset = offset;
                 InvalidateMeasure();
             }
+        }
+
+        /// <summary>
+        /// Return adjusted offset to fit in the current scroll information
+        /// </summary>
+        private double CoerceOffset(double offset, double viewport, double extent) {
+            offset = Math.Floor(offset);    // TODO: Pixel scroll
+
+            if (offset > extent - viewport) {
+                offset = extent - viewport;
+            }
+            if (offset < 0.0) {
+                offset = 0.0;
+            }
+
+            return offset;
         }
 
         private double GetLineDelta(Orientation orientation) {
@@ -151,13 +158,23 @@ namespace Gabang.Controls {
         Range _lastMeasureViewportRow = new Range();
         Range _lastMeasureViewportColumn = new Range();
 
+        bool MeasureBackGround = true;
+
         protected override Size MeasureOverride(Size availableSize) {
             EnsurePrerequisite();
 
-            // TODO: check infinity
-            EnsureMeasureOperation();
+            if (double.IsInfinity(availableSize.Width) || double.IsInfinity(availableSize.Height)) {
+                throw new NotSupportedException($"Must set CanContentScroll to true in ScrollViewer for {typeof(VariableGridPanel)}");
+            }
 
             _lastMeasureAvailableSize = availableSize;
+            if (MeasureBackGround) {
+                OneStepTimeLimit = TimeSpan.FromMilliseconds(100);
+                EnsureMeasureOperation();
+            } else {
+                OneStepTimeLimit = TimeSpan.MaxValue;
+                OnMeasureStep(null);
+            }
 
             return availableSize;
         }
@@ -250,6 +267,7 @@ namespace Gabang.Controls {
 
         bool _isRow = true;
         Size _lastMeasureStepDesiredSize = new Size();
+        TimeSpan OneStepTimeLimit;
         private object OnMeasureStep(object arg) {
 #if PANELTRACE
             DateTime startTime = DateTime.Now;
@@ -258,23 +276,33 @@ namespace Gabang.Controls {
             AdjustViewport();
 
             // create first cell
-            if (_lastMeasureViewportRow.Count == 0 || _lastMeasureViewportColumn.Count == 0) {
+            if (_lastMeasureViewportRow.Count == 0 && _lastMeasureViewportColumn.Count == 0) {
                 int horizontalGrowth = 1;
                 int verticalGrowth = 1;
 
                 var rowStack = Generator.GetRow(_lastMeasureViewportRow.Start);
                 var columnStack = Generator.GetColumn(_lastMeasureViewportColumn.Start);
-                Size desiredSize = MeasureChild(rowStack, columnStack);
+                Size cellSize = MeasureChild(rowStack, columnStack);
+                _lastMeasureStepDesiredSize.Width = cellSize.Width;
+                _lastMeasureStepDesiredSize.Height = cellSize.Height;
                 _lastMeasureViewportRow.Count += verticalGrowth;
                 _lastMeasureViewportColumn.Count += horizontalGrowth;
             }
 
-            if (_isRow) {
-                GrowVerticallyOneStep(_lastMeasureAvailableSize.Height, ref _lastMeasureStepDesiredSize, ref _lastMeasureViewportRow, ref _lastMeasureViewportColumn);
-            } else {
-                GrowHorizontallyOneStep(_lastMeasureAvailableSize.Width, ref _lastMeasureStepDesiredSize, ref _lastMeasureViewportRow, ref _lastMeasureViewportColumn);
-            }
-            _isRow ^= true;
+            DateTime startTime = DateTime.Now;
+
+            do {
+                if (_isRow) {
+                    GrowVerticallyOneStep(_lastMeasureAvailableSize.Height, ref _lastMeasureStepDesiredSize, ref _lastMeasureViewportRow, ref _lastMeasureViewportColumn);
+                } else {
+                    GrowHorizontallyOneStep(_lastMeasureAvailableSize.Width, ref _lastMeasureStepDesiredSize, ref _lastMeasureViewportRow, ref _lastMeasureViewportColumn);
+                }
+                _isRow ^= true;
+            } while (DateTime.Now - startTime < OneStepTimeLimit && ShoulContinueGrowing());
+
+#if PANELASSERT
+            AssertDesiredSize();
+#endif
 
             UpdateScrollInfo();
 
@@ -284,47 +312,87 @@ namespace Gabang.Controls {
             Trace(TraceLevel.Info, "VirtualizingGridPanel:Measure: {0} msec", (DateTime.Now - startTime).TotalMilliseconds);
 #endif
 
+            // measure operation
             ResetMeasureOperation();
 
-            if ((_lastMeasureAvailableSize.Height > _lastMeasureStepDesiredSize.Height && _lastMeasureViewportRow.Count != Generator.RowCount)
-                || (_lastMeasureAvailableSize.Width > _lastMeasureStepDesiredSize.Width && _lastMeasureViewportColumn.Count != Generator.ColumnCount)) {
+            if (ShoulContinueGrowing()) {
                 EnsureMeasureOperation();
             }
 
             return _lastMeasureStepDesiredSize;
         }
 
+        private bool ShoulContinueGrowing() {
+            return (_lastMeasureAvailableSize.Height > _lastMeasureStepDesiredSize.Height && _lastMeasureViewportRow.Count != Generator.RowCount)
+                || (_lastMeasureAvailableSize.Width > _lastMeasureStepDesiredSize.Width && _lastMeasureViewportColumn.Count != Generator.ColumnCount);
+        }
+
         private void AdjustViewport() {
-            while (VerticalOffset > _lastMeasureViewportRow.Start && _lastMeasureViewportRow.Count > 0) {
-                double height = Generator.GetRow(_lastMeasureViewportRow.Start).LayoutSize.Max.Value;
-                _lastMeasureViewportRow.Start += 1;
-                _lastMeasureViewportRow.Count -= 1;
-                _lastMeasureStepDesiredSize.Height -= height;
+#if PANELASSERT
+            AssertDesiredSize();
+#endif
+            if (Math.Abs(VerticalOffset - _lastMeasureViewportRow.Start) > _lastMeasureViewportRow.Count) {
+                _lastMeasureViewportRow.Start = (int) VerticalOffset;
+                _lastMeasureViewportRow.Count = 0;
+                _lastMeasureStepDesiredSize.Height = 0;
+            } else {
+                while (VerticalOffset > _lastMeasureViewportRow.Start && _lastMeasureViewportRow.Count > 0) {
+                    double height = Generator.GetRow(_lastMeasureViewportRow.Start).LayoutSize.Max.Value;
+                    _lastMeasureViewportRow.Start += 1;
+                    _lastMeasureViewportRow.Count -= 1;
+                    _lastMeasureStepDesiredSize.Height -= height;
+                }
+
+                int orgRowStart = _lastMeasureViewportRow.Start;
+                while (VerticalOffset < orgRowStart && _lastMeasureViewportRow.Count > 0) {
+                    double height = Generator.GetRow(_lastMeasureViewportRow.Start + _lastMeasureViewportRow.Count - 1).LayoutSize.Max.Value;
+                    orgRowStart -= 1;
+                    _lastMeasureViewportRow.Count -= 1;
+                    _lastMeasureStepDesiredSize.Height -= height;
+                }
             }
 
-            int orgRowStart = _lastMeasureViewportRow.Start;
-            while (VerticalOffset < orgRowStart && _lastMeasureViewportRow.Count > 0) {
-                double height = Generator.GetRow(_lastMeasureViewportRow.Start + _lastMeasureViewportRow.Count - 1).LayoutSize.Max.Value;
-                orgRowStart -= 1;
-                _lastMeasureViewportRow.Count -= 1;
-                _lastMeasureStepDesiredSize.Height -= height;
-            }
+            if (Math.Abs(HorizontalOffset - _lastMeasureViewportColumn.Start) > _lastMeasureViewportColumn.Count) {
+                _lastMeasureViewportColumn.Start = (int)HorizontalOffset;
+                _lastMeasureViewportColumn.Count = 0;
+                _lastMeasureStepDesiredSize.Width = 0;
+            } else {
+                while (HorizontalOffset > _lastMeasureViewportColumn.Start && _lastMeasureViewportColumn.Count > 0) {
+                    double width = Generator.GetColumn(_lastMeasureViewportColumn.Start).LayoutSize.Max.Value;
+                    _lastMeasureViewportColumn.Start += 1;
+                    _lastMeasureViewportColumn.Count -= 1;
+                    _lastMeasureStepDesiredSize.Width -= width;
+                }
 
-            while (HorizontalOffset > _lastMeasureViewportColumn.Start && _lastMeasureViewportColumn.Count > 0) {
-                double width = Generator.GetColumn(_lastMeasureViewportColumn.Start).LayoutSize.Max.Value;
-                _lastMeasureViewportColumn.Start += 1;
-                _lastMeasureViewportColumn.Count -= 1;
-                _lastMeasureStepDesiredSize.Width -= width;
-            }
-
-            int orgColumnStart = _lastMeasureViewportColumn.Start;
-            while (HorizontalOffset < orgColumnStart && _lastMeasureViewportColumn.Count > 0) {
-                double width = Generator.GetColumn(_lastMeasureViewportColumn.Start + _lastMeasureViewportColumn.Count - 1).LayoutSize.Max.Value;
-                orgColumnStart -= 1;
-                _lastMeasureViewportColumn.Count -= 1;
-                _lastMeasureStepDesiredSize.Width -= width;
+                int orgColumnStart = _lastMeasureViewportColumn.Start;
+                while (HorizontalOffset < orgColumnStart && _lastMeasureViewportColumn.Count > 0) {
+                    double width = Generator.GetColumn(_lastMeasureViewportColumn.Start + _lastMeasureViewportColumn.Count - 1).LayoutSize.Max.Value;
+                    orgColumnStart -= 1;
+                    _lastMeasureViewportColumn.Count -= 1;
+                    _lastMeasureStepDesiredSize.Width -= width;
+                }
             }
         }
+
+#if PANELASSERT
+        private bool DoubleClose(double value1, double value2) {
+            return Math.Abs(value1 - value2) < 0.0001;
+        }
+
+        private void AssertDesiredSize() {
+            double size = 0;
+            for (int i = 0; i < _lastMeasureViewportRow.Count; i++) {
+                size += Generator.GetRow(_lastMeasureViewportRow.Start + i).LayoutSize.Max.Value;
+            }
+            Debug.Assert(DoubleClose(_lastMeasureStepDesiredSize.Height, size));
+
+            size = 0;
+            for (int i = 0; i < _lastMeasureViewportColumn.Count; i++) {
+                size += Generator.GetColumn(_lastMeasureViewportColumn.Start + i).LayoutSize.Max.Value;
+            }
+            Debug.Assert(DoubleClose(_lastMeasureStepDesiredSize.Width, size));
+        }
+#endif
 
         private void UpdateScrollInfo() {
             if (Generator != null) {
@@ -383,7 +451,7 @@ namespace Gabang.Controls {
             int growth = 0;
             int growStartAt = viewportRow.Start + viewportRow.Count;
 
-            // grow backward
+            // grow backward to fit scroll backward
             int growthBackward = 0;
             int growBackwardStartAt = viewportRow.Start - 1;
             if ((viewportRow.Start > VerticalOffset)
@@ -405,6 +473,16 @@ namespace Gabang.Controls {
                 desiredSize.Width = rowSize.Width;
 
                 growth += 1;
+            }
+            // grow backward again to fit size
+            else if ((desiredSize.Height < extent) && (growBackwardStartAt - growthBackward >= 0)) {
+                var rowStack = Generator.GetRow(growBackwardStartAt - growthBackward);
+                Size rowSize = MeasureRow(rowStack, ref viewportColumn);
+
+                desiredSize.Height += rowSize.Height;
+                desiredSize.Width = rowSize.Width;
+
+                growthBackward += 1;
             }
 
             viewportRow.Start -= growthBackward;
@@ -451,10 +529,10 @@ namespace Gabang.Controls {
             int growth = 0;
             int growStartAt = viewportColumn.Start + viewportColumn.Count;
 
-            // grow backward
+            // grow backward to fit scroll backward
             int growthBackward = 0;
             int growBackwardStartAt = viewportColumn.Start - 1;
-            if ((viewportColumn.Start < HorizontalOffset)
+            if ((viewportColumn.Start > HorizontalOffset)
                 && (desiredSize.Width < extent) && ((growBackwardStartAt - growthBackward >= 0))) {
                 var columnStack = Generator.GetColumn(growBackwardStartAt - growthBackward);
                 Size columnSize = MeasureColumn(columnStack, ref viewportRow);
@@ -474,7 +552,16 @@ namespace Gabang.Controls {
 
                 growth += 1;
             }
+            // grow backward again to fit size
+            else if ((desiredSize.Width < extent) && ((growBackwardStartAt - growthBackward >= 0))) {
+                var columnStack = Generator.GetColumn(growBackwardStartAt - growthBackward);
+                Size columnSize = MeasureColumn(columnStack, ref viewportRow);
 
+                desiredSize.Height = columnSize.Height;
+                desiredSize.Width += columnSize.Width;
+
+                growthBackward += 1;
+            }
 
             viewportColumn.Start -= growthBackward;
             viewportColumn.Count += growth + growthBackward;
@@ -577,7 +664,7 @@ namespace Gabang.Controls {
 
 #endregion
 
-        #region Clean Up
+#region Clean Up
 
         private void PostArrange() {
 #if PANELTRACE
@@ -670,7 +757,7 @@ namespace Gabang.Controls {
             return new Range() { Start = lastIndex - count + 1, Count = count };
         }
 
-        #endregion
+#endregion
 
         private VariableGridCellGenerator Generator { get; set; }
 
@@ -717,6 +804,7 @@ namespace Gabang.Controls {
 
         #region TRACE
 #if PANELTRACE
+        private int _traceStart = 0;
         private List<string> _traces = new List<string>();
         private DispatcherOperation _traceOperation;
         private TraceLevel _traceLevel = TraceLevel.Info;
@@ -726,6 +814,7 @@ namespace Gabang.Controls {
                 Debug.WriteLine(message);
             }
             _traces.Clear();
+            _traceStart = 0;
 
             _traceOperation = null;
             return null;
@@ -737,25 +826,31 @@ namespace Gabang.Controls {
             }
         }
 
-        [Conditional("PANELTRACE")]
         void Trace(TraceLevel level, string message) {
             if (level <= _traceLevel) {
-                _traces.Add(message);
+                AddTrace(message);
 
                 EnsureFlushOperation();
             }
         }
 
-        [Conditional("PANELTRACE")]
         void Trace(TraceLevel level, string format, params object[] args) {
             if (level <= _traceLevel) {
-                _traces.Add(string.Format(format, args));
+                AddTrace(string.Format(format, args));
 
                 EnsureFlushOperation();
+            }
+        }
+
+        void AddTrace(string message) {
+            if (_traces.Count > 1000) {
+                _traces[_traceStart++] = message;
+            } else {
+                _traces.Add(message);
             }
         }
 #endif
 
-        #endregion
+#endregion
     }
 }
