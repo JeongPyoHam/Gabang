@@ -302,9 +302,10 @@ namespace Gabang.Controls {
                 _lastMeasureStepDesiredSize.Height -= height;
             }
 
-            while (VerticalOffset < _lastMeasureViewportRow.Start && _lastMeasureViewportRow.Count > 0) {
+            int orgRowStart = _lastMeasureViewportRow.Start;
+            while (VerticalOffset < orgRowStart && _lastMeasureViewportRow.Count > 0) {
                 double height = Generator.GetRow(_lastMeasureViewportRow.Start + _lastMeasureViewportRow.Count - 1).LayoutSize.Max.Value;
-                _lastMeasureViewportRow.Start -= 1;
+                orgRowStart -= 1;
                 _lastMeasureViewportRow.Count -= 1;
                 _lastMeasureStepDesiredSize.Height -= height;
             }
@@ -316,9 +317,10 @@ namespace Gabang.Controls {
                 _lastMeasureStepDesiredSize.Width -= width;
             }
 
-            while (HorizontalOffset < _lastMeasureViewportColumn.Start && _lastMeasureViewportColumn.Count > 0) {
+            int orgColumnStart = _lastMeasureViewportColumn.Start;
+            while (HorizontalOffset < orgColumnStart && _lastMeasureViewportColumn.Count > 0) {
                 double width = Generator.GetColumn(_lastMeasureViewportColumn.Start + _lastMeasureViewportColumn.Count - 1).LayoutSize.Max.Value;
-                _lastMeasureViewportColumn.Start -= 1;
+                orgColumnStart -= 1;
                 _lastMeasureViewportColumn.Count -= 1;
                 _lastMeasureStepDesiredSize.Width -= width;
             }
@@ -381,21 +383,11 @@ namespace Gabang.Controls {
             int growth = 0;
             int growStartAt = viewportRow.Start + viewportRow.Count;
 
-            // grow forward
-            if ((desiredSize.Height < extent) && ((growStartAt + growth) < Generator.RowCount)) {
-                var rowStack = Generator.GetRow(growStartAt + growth);
-                Size rowSize = MeasureRow(rowStack, ref viewportColumn);
-
-                desiredSize.Height += rowSize.Height;
-                desiredSize.Width = rowSize.Width;
-
-                growth += 1;
-            }
-
             // grow backward
             int growthBackward = 0;
             int growBackwardStartAt = viewportRow.Start - 1;
-            if ((desiredSize.Height < extent) && (growBackwardStartAt - growthBackward >= 0)) {
+            if ((viewportRow.Start > VerticalOffset)
+                &&  (desiredSize.Height < extent) && (growBackwardStartAt - growthBackward >= 0)) {
                 var rowStack = Generator.GetRow(growBackwardStartAt - growthBackward);
                 Size rowSize = MeasureRow(rowStack, ref viewportColumn);
 
@@ -403,6 +395,16 @@ namespace Gabang.Controls {
                 desiredSize.Width = rowSize.Width;
 
                 growthBackward += 1;
+            }
+            // grow forward
+            else if ((desiredSize.Height < extent) && ((growStartAt + growth) < Generator.RowCount)) {
+                var rowStack = Generator.GetRow(growStartAt + growth);
+                Size rowSize = MeasureRow(rowStack, ref viewportColumn);
+
+                desiredSize.Height += rowSize.Height;
+                desiredSize.Width = rowSize.Width;
+
+                growth += 1;
             }
 
             viewportRow.Start -= growthBackward;
@@ -449,8 +451,21 @@ namespace Gabang.Controls {
             int growth = 0;
             int growStartAt = viewportColumn.Start + viewportColumn.Count;
 
+            // grow backward
+            int growthBackward = 0;
+            int growBackwardStartAt = viewportColumn.Start - 1;
+            if ((viewportColumn.Start < HorizontalOffset)
+                && (desiredSize.Width < extent) && ((growBackwardStartAt - growthBackward >= 0))) {
+                var columnStack = Generator.GetColumn(growBackwardStartAt - growthBackward);
+                Size columnSize = MeasureColumn(columnStack, ref viewportRow);
+
+                desiredSize.Height = columnSize.Height;
+                desiredSize.Width += columnSize.Width;
+
+                growthBackward += 1;
+            }
             // grow forward
-            if ((desiredSize.Width < extent) && ((growStartAt + growth) < Generator.ColumnCount)) {
+            else if ((desiredSize.Width < extent) && ((growStartAt + growth) < Generator.ColumnCount)) {
                 var columnStack = Generator.GetColumn(growStartAt + growth);
                 Size columnSize = MeasureColumn(columnStack, ref viewportRow);
 
@@ -460,18 +475,6 @@ namespace Gabang.Controls {
                 growth += 1;
             }
 
-            // grow backward
-            int growthBackward = 0;
-            int growBackwardStartAt = viewportColumn.Start - 1;
-            if ((desiredSize.Width < extent) && ((growBackwardStartAt - growthBackward >= 0))) {
-                var columnStack = Generator.GetColumn(growBackwardStartAt - growthBackward);
-                Size columnSize = MeasureColumn(columnStack, ref viewportRow);
-
-                desiredSize.Height = columnSize.Height;
-                desiredSize.Width += columnSize.Width;
-
-                growthBackward += 1;
-            }
 
             viewportColumn.Start -= growthBackward;
             viewportColumn.Count += growth + growthBackward;
