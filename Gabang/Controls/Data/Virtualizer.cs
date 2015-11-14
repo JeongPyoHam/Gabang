@@ -1,79 +1,76 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Gabang.Controls.Data {
-    internal class Virtualizer<T> {
-        private object _syncObj;
-        private Queue<IVirtualizingItem<T>> _works = new Queue<IVirtualizingItem<T>>();
+    /// <summary>
+    /// Handles <see cref="IVirtualizable{T}"/> in background
+    /// </summary>
+    /// <typeparam name="T">the type of value in <see cref="IVirtualizable{T}"/></typeparam>
+    public class Virtualizer<T> {
+        enum Operation {
+            Virtualization,
+            Realization,
+            Cancelled,
+        }
+
+        class WorkItem {
+            public Operation Operation;
+            public IVirtualizable<T> Virtualizable;
+        }
+
+        private object _syncObj = new object();
+        private Queue<WorkItem> _works = new Queue<WorkItem>();
         private Task _pumpTask;
 
-        private Func<Tuple<int, int>, Task<T>> _providerAsync;
-
-        public Virtualizer(Func<Tuple<int, int>, Task<T>> provider, object syncObj) {
-            if (provider == null || syncObj == null) {
-                throw new ArgumentNullException("provider");
-            }
-
-            _providerAsync = provider;
-            _syncObj = syncObj;
-        }
-
-        public event EventHandler<VirtualizingStateChangedArg<T>> VirtualizaingStateChanged;
-
-        public void Virtualize(IVirtualizingItem<T> item) {
+        public void Virtualize(IVirtualizable<T> item) {
             lock (_syncObj) {
-                if (item.Status == VirtualizingState.Virtualized) {
-                    return;
+                bool enqueue = true;
+
+                // look into queue for duplicate item
+                var workItemInQueue = _works.FirstOrDefault((q) => q.Virtualizable.Equals(item));
+                if (workItemInQueue != null) {
+                    if (workItemInQueue.Operation == Operation.Virtualization) {
+                        enqueue = false;    // duplicate item. do not enqueue
+                    } else {
+                        if (workItemInQueue.Operation == Operation.Realization) {
+                            // realize queue, cancel it
+                            workItemInQueue.Operation = Operation.Cancelled;
+                        }
+                    }
                 }
 
-                var preQueue = _works.FirstOrDefault((q) => q.Id == item.Id);
-                if (preQueue != null) {
-                    switch (preQueue.Status) {
-                        case VirtualizingState.Virtualized:
-                        case VirtualizingState.PendingVirtualization:
-                            // do nothing
-                            break;
-                        case VirtualizingState.Realized:
-                            item.Status = VirtualizingState.PendingVirtualization;
-                            break;
-                        case VirtualizingState.PendingRealization:
-                            item.Status = VirtualizingState.Virtualized;    // cancel realization
-                            break;
-                    }
-                } else {
-                    item.Status = VirtualizingState.PendingVirtualization;
-                    _works.Enqueue(item);
+                if (enqueue) {
+                    _works.Enqueue(new WorkItem() { Operation = Operation.Virtualization, Virtualizable = item });
                 }
+
+                EnsurePump();
             }
         }
 
-        public void Realize(IVirtualizingItem<T> item) {
+        public void Realize(IVirtualizable<T> item) {
             lock (_syncObj) {
-                if (item.Status == VirtualizingState.Realized) {
-                    return;
+                bool enqueue = true;
+
+                // look into queue for duplicate item
+                var workItemInQueue = _works.FirstOrDefault((q) => q.Virtualizable.Equals(item));
+                if (workItemInQueue != null) {
+                    if (workItemInQueue.Operation == Operation.Realization) {
+                        enqueue = false;    // duplicate item. do not enqueue
+                    } else {
+                        if (workItemInQueue.Operation == Operation.Virtualization) {
+                            // realize queue, cancel it
+                            workItemInQueue.Operation = Operation.Cancelled;
+                        }
+                    }
                 }
 
-                var preQueue = _works.FirstOrDefault((q) => q.Id == item.Id);
-                if (preQueue != null) {
-                    switch (preQueue.Status) {
-                        case VirtualizingState.Virtualized:
-                            item.Status = VirtualizingState.PendingRealization;
-                            break;
-                        case VirtualizingState.PendingVirtualization:
-                            item.Status = VirtualizingState.Realized;   // cancel virtualization
-                            break;
-                        case VirtualizingState.Realized:
-                        case VirtualizingState.PendingRealization:
-                            // do nothing
-                            break;
-                    }
-                } else {
-                    item.Status = VirtualizingState.PendingRealization;
-                    _works.Enqueue(item);
+                if (enqueue) {
+                    _works.Enqueue(new WorkItem() { Operation = Operation.Realization, Virtualizable = item });
                 }
+
+                EnsurePump();
             }
         }
 
@@ -96,7 +93,7 @@ namespace Gabang.Controls.Data {
             bool fContinue = true;
 
             while (fContinue) {
-                IVirtualizingItem<T> item = null;
+                WorkItem item = null;
                 lock (_syncObj) {
                     if (_works.Count > 0) {
                         item = _works.Dequeue();
@@ -107,37 +104,14 @@ namespace Gabang.Controls.Data {
                 }
 
                 if (item != null) {
-                    switch (item.Status) {
-                        case VirtualizingState.Virtualized:
-                        case VirtualizingState.Realized:
-                            // do nothing
-                            break;
-                        case VirtualizingState.PendingVirtualization:
-                            ClearValue(item);
-                            break;
-                        case VirtualizingState.PendingRealization:
-                            await SetValueAsync(item);
-                            break;
-                        default:
-                            break;
+                    if (item.Operation == Operation.Realization) {
+                        await item.Virtualizable.RealizeAsync();
+                    } else if (item.Operation == Operation.Virtualization) {
+                        await item.Virtualizable.VirtualizeAsync();
+                    } else if (item.Operation == Operation.Cancelled) {
+                        // no-op
                     }
                 }
-            }
-        }
-
-        private async Task SetValueAsync(IVirtualizingItem<T> item) {
-            T value = await _providerAsync(item.Id);
-
-            lock (_syncObj) {
-                item.Value = value;
-                item.Status = VirtualizingState.Realized;
-            }
-        }
-
-        private void ClearValue(IVirtualizingItem<T> item) {
-            lock (_syncObj) {
-                item.Value = default(T);
-                item.Status = VirtualizingState.Virtualized;
             }
         }
     }

@@ -38,4 +38,9 @@ namespace Gabang.Controls {
             return (this._end > other._start) && (this._start < other._end);
         }
     }
+
+    public struct GridRange {
+        public Range Rows { get; set; }
+        public Range Columns { get; set; }
+    }
 }

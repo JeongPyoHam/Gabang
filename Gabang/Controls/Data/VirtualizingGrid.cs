@@ -12,8 +12,8 @@ namespace Gabang.Controls.Data {
         private Range _realizedColumns;
 
         private object _syncObj = new object();
-        private Grid<IVirtualizingItem<IGrid<T>>> _pages;
-        private Queue<IVirtualizingItem<T>> _works = new Queue<IVirtualizingItem<T>>();
+        private GridByDictionary<IVirtualizable<IGrid<T>>> _pages;
+        private Queue<IVirtualizable<T>> _works = new Queue<IVirtualizable<T>>();
         private Task _pumpTask;
 
         public VirtualizingGrid(int rowCount, int columnCount, IGridProvider<T> provider) {
@@ -21,7 +21,7 @@ namespace Gabang.Controls.Data {
             RowCount = rowCount;
             ColumnCount = columnCount;
 
-            _pages = new Grid<IVirtualizingItem<IGrid<T>>>(rowCount, columnCount);
+            _pages = new GridByDictionary<IVirtualizable<IGrid<T>>>(rowCount, columnCount);
             _realizedRows = new Range();
             _realizedColumns = new Range();
         }
@@ -91,7 +91,7 @@ namespace Gabang.Controls.Data {
 
         #region Virtualizer
 
-        public void Virtualize(IVirtualizingItem<T> item) {
+        public void Virtualize(IVirtualizable<T> item) {
             lock (_syncObj) {
                 if (item.Status == VirtualizingState.Virtualized) {
                     return;
@@ -118,7 +118,7 @@ namespace Gabang.Controls.Data {
             }
         }
 
-        public void Realize(IVirtualizingItem<T> item) {
+        public void Realize(IVirtualizable<T> item) {
             lock (_syncObj) {
                 if (item.Status == VirtualizingState.Realized) {
                     return;
@@ -164,7 +164,7 @@ namespace Gabang.Controls.Data {
             bool fContinue = true;
 
             while (fContinue) {
-                IVirtualizingItem<T> item = null;
+                IVirtualizable<T> item = null;
                 lock (_syncObj) {
                     if (_works.Count > 0) {
                         item = _works.Dequeue();
@@ -193,7 +193,7 @@ namespace Gabang.Controls.Data {
             }
         }
 
-        private async Task SetValueAsync(IVirtualizingItem<T> item) {
+        private async Task SetValueAsync(IVirtualizable<T> item) {
             T value = await _providerAsync(item.Id);
 
             lock (_syncObj) {
@@ -202,7 +202,7 @@ namespace Gabang.Controls.Data {
             }
         }
 
-        private void ClearValue(IVirtualizingItem<T> item) {
+        private void ClearValue(IVirtualizable<T> item) {
             lock (_syncObj) {
                 item.Value = default(T);
                 item.Status = VirtualizingState.Virtualized;

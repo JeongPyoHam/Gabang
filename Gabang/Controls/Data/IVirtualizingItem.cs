@@ -5,11 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Gabang.Controls.Data {
-    public interface IVirtualizingItem<T> {
-        Tuple<int, int> Id { get; }
+    public interface IVirtualizable<T> : IEquatable<IVirtualizable<T>> {
+        Task RealizeAsync();
 
-        VirtualizingState Status { get; set; }
-
-        T Value { get; set; }
+        Task VirtualizeAsync();
     }
 }
