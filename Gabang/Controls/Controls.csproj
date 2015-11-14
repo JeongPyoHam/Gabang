@@ -46,6 +46,15 @@
   <ItemGroup>
     <Compile Include="BindableBase.cs" />
     <Compile Include="BooleanToVisibilityConverter.cs" />
+    <Compile Include="DataVirtualization\Grid.cs" />
+    <Compile Include="DataVirtualization\IGrid.cs" />
+    <Compile Include="DataVirtualization\IGridProvider.cs" />
+    <Compile Include="DataVirtualization\IVirtualizingItem.cs" />
+    <Compile Include="DataVirtualization\RealizedRangeChangedArgs.cs" />
+    <Compile Include="DataVirtualization\Virtualizer.cs" />
+    <Compile Include="DataVirtualization\VirtualizingGrid.cs" />
+    <Compile Include="DataVirtualization\VirtualizingState.cs" />
+    <Compile Include="DataVirtualization\VirtualizingStateChangedArg.cs" />
     <Compile Include="DummyControl.cs" />
     <Compile Include="VirtualizingGrid\ConstantCountList.cs" />
     <Compile Include="VirtualizingGrid\ConstantList.cs" />
