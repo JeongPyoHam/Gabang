@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Gabang.Controls.DataVirtualization {
+namespace Gabang.Controls.Data {
     internal class Virtualizer<T> {
         private object _syncObj;
         private Queue<IVirtualizingItem<T>> _works = new Queue<IVirtualizingItem<T>>();

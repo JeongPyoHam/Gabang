@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Gabang.Controls.DataVirtualization {
+namespace Gabang.Controls.Data {
     public class Grid<T> : IGrid<T> {
         private Dictionary<int, List<T>> _columns;
 

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Gabang.Controls.DataVirtualization {
+namespace Gabang.Controls.Data {
     public class VirtualizingGrid<T> : IGrid<T> {
         private IGridProvider<T> _provider;
 

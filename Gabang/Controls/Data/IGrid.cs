@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Gabang.Controls.DataVirtualization {
+namespace Gabang.Controls.Data {
     public interface IGrid<T> {
         int RowCount { get; }
         int ColumnCount { get; }

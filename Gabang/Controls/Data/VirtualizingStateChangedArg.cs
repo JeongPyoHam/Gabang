@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Gabang.Controls.DataVirtualization {
+namespace Gabang.Controls.Data {
     public class VirtualizingStateChangedArg<T> : EventArgs {
 
         public VirtualizingStateChangedArg(Tuple<int, int> id, VirtualizingState state, T value) {
