@@ -50,10 +50,11 @@
     <Compile Include="Data\GridByDictionary.cs" />
     <Compile Include="Data\IGrid.cs" />
     <Compile Include="Data\IGridProvider.cs" />
-    <Compile Include="Data\IVirtualizingItem.cs" />
+    <Compile Include="Data\IVirtualizable.cs" />
     <Compile Include="Data\RealizedRangeChangedArgs.cs" />
     <Compile Include="Data\Virtualizer.cs" />
     <Compile Include="Data\VirtualizingGrid.cs" />
+    <Compile Include="Data\VirtualizingGridItem.cs" />
     <Compile Include="Data\VirtualizingState.cs" />
     <Compile Include="Data\VirtualizingStateChangedArg.cs" />
     <Compile Include="DummyControl.cs" />

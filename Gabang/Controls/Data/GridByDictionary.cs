@@ -20,7 +20,7 @@ namespace Gabang.Controls.Data {
 
         public int RowCount { get; }
 
-        public T GetAt(int rowIndex, int columnIndex) {
+        public virtual T GetAt(int rowIndex, int columnIndex) {
             CheckIndex(rowIndex, columnIndex);
 
             Dictionary<int, T> column;
@@ -34,7 +34,7 @@ namespace Gabang.Controls.Data {
             return default(T);
         }
 
-        public void SetAt(int rowIndex, int columnIndex, T value) {
+        public virtual void SetAt(int rowIndex, int columnIndex, T value) {
             CheckIndex(rowIndex, columnIndex);
 
             Dictionary<int, T> column;
