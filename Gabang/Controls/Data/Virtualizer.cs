@@ -9,6 +9,7 @@ namespace Gabang.Controls.Data {
     /// </summary>
     /// <typeparam name="T">the type of value in <see cref="IVirtualizable{T}"/></typeparam>
     public class Virtualizer<T> {
+        #region field and nested types
         enum Operation {
             Virtualization,
             Realization,
@@ -23,6 +24,10 @@ namespace Gabang.Controls.Data {
         private object _syncObj = new object();
         private Queue<WorkItem> _works = new Queue<WorkItem>();
         private Task _pumpTask;
+
+        #endregion
+
+        #region public 
 
         public void Virtualize(IVirtualizable<T> item) {
             lock (_syncObj) {
@@ -74,6 +79,10 @@ namespace Gabang.Controls.Data {
             }
         }
 
+        #endregion
+
+        #region private
+
         private void EnsurePump() {
             lock (_syncObj) {
                 if (_pumpTask == null) {
@@ -114,5 +123,7 @@ namespace Gabang.Controls.Data {
                 }
             }
         }
+
+        #endregion
     }
 }
