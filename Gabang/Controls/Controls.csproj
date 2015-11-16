@@ -46,7 +46,7 @@
   <ItemGroup>
     <Compile Include="BindableBase.cs" />
     <Compile Include="BooleanToVisibilityConverter.cs" />
-    <Compile Include="Data\Grid.cs" />
+    <Compile Include="Data\GridByList.cs" />
     <Compile Include="Data\GridByDictionary.cs" />
     <Compile Include="Data\IGrid.cs" />
     <Compile Include="Data\IGridProvider.cs" />
