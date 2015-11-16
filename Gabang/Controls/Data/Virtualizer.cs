@@ -18,7 +18,7 @@ namespace Gabang.Controls.Data {
 
         class WorkItem {
             public Operation Operation;
-            public IVirtualizable<T> Virtualizable;
+            public IVirtualizable Virtualizable;
         }
 
         private object _syncObj = new object();
@@ -29,12 +29,12 @@ namespace Gabang.Controls.Data {
 
         #region public 
 
-        public void Virtualize(IVirtualizable<T> item) {
+        public void Virtualize(IVirtualizable item) {
             lock (_syncObj) {
                 bool enqueue = true;
 
                 // look into queue for duplicate item
-                var workItemInQueue = _works.FirstOrDefault((q) => q.Virtualizable.Equals(item));
+                var workItemInQueue = _works.FirstOrDefault((q) => object.Equals(q, q.Virtualizable));
                 if (workItemInQueue != null) {
                     if (workItemInQueue.Operation == Operation.Virtualization) {
                         enqueue = false;    // duplicate item. do not enqueue
@@ -54,12 +54,12 @@ namespace Gabang.Controls.Data {
             }
         }
 
-        public void Realize(IVirtualizable<T> item) {
+        public void Realize(IVirtualizable item) {
             lock (_syncObj) {
                 bool enqueue = true;
 
                 // look into queue for duplicate item
-                var workItemInQueue = _works.FirstOrDefault((q) => q.Virtualizable.Equals(item));
+                var workItemInQueue = _works.FirstOrDefault((q) => object.Equals(q, q.Virtualizable));
                 if (workItemInQueue != null) {
                     if (workItemInQueue.Operation == Operation.Realization) {
                         enqueue = false;    // duplicate item. do not enqueue
@@ -116,7 +116,7 @@ namespace Gabang.Controls.Data {
                     if (item.Operation == Operation.Realization) {
                         await item.Virtualizable.RealizeAsync();
                     } else if (item.Operation == Operation.Virtualization) {
-                        await item.Virtualizable.VirtualizeAsync();
+                        //await item.Virtualizable.VirtualizeAsync();
                     } else if (item.Operation == Operation.Cancelled) {
                         // no-op
                     }

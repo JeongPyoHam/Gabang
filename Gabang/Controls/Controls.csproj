@@ -51,12 +51,11 @@
     <Compile Include="Data\IGrid.cs" />
     <Compile Include="Data\IGridProvider.cs" />
     <Compile Include="Data\IVirtualizable.cs" />
-    <Compile Include="Data\RealizedRangeChangedArgs.cs" />
+    <Compile Include="Data\Page.cs" />
+    <Compile Include="Data\PagedGrid.cs" />
     <Compile Include="Data\Virtualizer.cs" />
     <Compile Include="Data\VirtualizingGrid.cs" />
     <Compile Include="Data\VirtualizingGridItem.cs" />
-    <Compile Include="Data\VirtualizingState.cs" />
-    <Compile Include="Data\VirtualizingStateChangedArg.cs" />
     <Compile Include="DummyControl.cs" />
     <Compile Include="VirtualizingGrid\ConstantCountList.cs" />
     <Compile Include="VirtualizingGrid\ConstantList.cs" />

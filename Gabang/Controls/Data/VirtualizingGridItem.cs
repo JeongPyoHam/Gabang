@@ -5,12 +5,17 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Gabang.Controls.Data {
-    public abstract class VirtualizingGridItem<T> : IVirtualizable<T> {
-        public int Row { get; set; }
+    public abstract class VirtualizingGridItem<T> : IVirtualizable {
+        public VirtualizingGridItem(int row, int column) {
+            Row = row;
+            Column = column;
+        }
 
-        public int Column { get; set; }
+        public int Row { get; }
 
-        public bool Equals(IVirtualizable<T> other) {
+        public int Column { get; }
+
+        public bool Equals(IVirtualizable other) {
             var otherItem = other as VirtualizingGridItem<T>;
             if (otherItem != null) {
                 return (Row == otherItem.Row && Column == otherItem.Column);

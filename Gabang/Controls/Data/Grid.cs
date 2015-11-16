@@ -1,26 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Collections.ObjectModel;
 
 namespace Gabang.Controls.Data {
-    public class Grid<T> : IGrid<T> {
-        private Dictionary<int, List<T>> _columns;
+    /// <summary>
+    /// <see cref="IGrid{T}"/> implmented by <see cref="List{T}"/>
+    /// </summary>
+    /// <typeparam name="T">the type of value in the grid</typeparam>
+    public class GridByList<T> : IGrid<T> {
+        private List<List<T>> _columns;
 
-        public Grid(int rowCount, int columnCount) {
-            if (rowCount <= 0 || columnCount <= 0) {
-                throw new ArgumentOutOfRangeException("rowCount");
-            }
-
+        public GridByList(int rowCount, int columnCount) {
             RowCount = rowCount;
             ColumnCount = columnCount;
 
-            _columns = new Dictionary<int, List<T>>(columnCount);
+            _columns = new List<List<T>>(columnCount);
         }
 
-        public Grid(int rowCount, int columnCount, ReadOnlyCollection<ReadOnlyCollection<T>> values)
-            : this(rowCount, columnCount) {
+        public GridByList(int rowCount, int columnCount, ReadOnlyCollection<ReadOnlyCollection<T>> values) : this(rowCount, columnCount) {
             if (values.Count != columnCount) {
                 throw new ArgumentException("values Count must be same as columnCount");
             }
@@ -28,7 +25,7 @@ namespace Gabang.Controls.Data {
                 if (values[i].Count != rowCount) {
                     throw new ArgumentException("values item length must be same as rowCount");
                 }
-                _columns.Add(i, new List<T>(values[i]));
+                _columns.Add(new List<T>(values[i]));
             }
         }
 
@@ -36,38 +33,12 @@ namespace Gabang.Controls.Data {
 
         public int RowCount { get; }
 
-        public bool GetAt(int rowIndex, int columnIndex, out T value) {
-            List<T> column;
-            if (_columns.TryGetValue(columnIndex, out column)) {
-                if (column != null) {
-                    if (column.Count > rowIndex && rowIndex >= 0) {
-                        value = column[rowIndex];
-                        return true;
-                    }
-                }
-            }
-            value = default(T);
-            return false;
+        public T GetAt(int rowIndex, int columnIndex) {
+            return _columns[columnIndex][rowIndex];
         }
 
         public void SetAt(int rowIndex, int columnIndex, T value) {
-            if (rowIndex < 0 || columnIndex < 0 || rowIndex >= RowCount || columnIndex >= ColumnCount) {
-                throw new ArgumentOutOfRangeException("rowIndex");
-            }
-
-            List<T> column;
-            if (_columns.TryGetValue(columnIndex, out column)) {
-                if (column != null) {
-                    column[rowIndex] = value;
-                }
-            } else {
-                column = new List<T>(RowCount);
-                for (int i = 0; i < RowCount; i++) {
-                    column.Add(default(T));
-                }
-                column[rowIndex] = value;
-                _columns[columnIndex] = column;
-            }
+            _columns[columnIndex][rowIndex] = value;
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace Gabang.Controls.Data {
     /// <summary>
@@ -6,40 +7,40 @@ namespace Gabang.Controls.Data {
     /// Realized when item is accessed, and Virtualized when item is set to other value (e.g. null)
     /// </summary>
     /// <typeparam name="T">the type of value in grid</typeparam>
-    public class VirtualizingGrid<T> : GridByDictionary<IVirtualizable<T>> {
-        private Virtualizer<T> _virtualizer;
-        private Func<int, int, VirtualizingGridItem<T>> _itemFactory;
+    public class VirtualizingGrid<T> where T : IVirtualizable {
+        private GridByDictionary<T> _grid;
+        private Func<int, int, T> _itemFactory;
 
         public VirtualizingGrid(
             int rowCount,
             int columnCount,
-            Func<int, int, VirtualizingGridItem<T>> factory) : base (rowCount, columnCount) {
-            _virtualizer = new Virtualizer<T>();
+            Func<int, int, T> factory) {
+            _grid = new GridByDictionary<T>(rowCount, columnCount);
+
             _itemFactory = factory;
         }
 
-        public override IVirtualizable<T> GetAt(int rowIndex, int columnIndex) {
-            var item = base.GetAt(rowIndex, columnIndex);
+        public async Task<T> GetAtAsync(int rowIndex, int columnIndex) {
+            var item = _grid.GetAt(rowIndex, columnIndex);
 
             if (item == null) {
                 item = _itemFactory(rowIndex, columnIndex);
-                base.SetAt(rowIndex, columnIndex, item);
-                _virtualizer.Realize(item);
+                await item.RealizeAsync();
+                _grid.SetAt(rowIndex, columnIndex, item);
             }
 
             return item;
         }
 
-        public void SetAt(int rowIndex, int columnIndex, T value) {
-            var item = base.GetAt(rowIndex, columnIndex);
+        public void ClearExcept(GridRange range) {
+            _grid.ClearExcept(range);
+        }
+
+        public void ClearAt(int rowIndex, int columnIndex) {
+            var item = _grid.GetAt(rowIndex, columnIndex);
 
             if (item != null) {
-                if (!object.Equals(value, item)) {  // same object doesn't virtualize
-                    _virtualizer.Virtualize(item);
-                    base.SetAt(rowIndex, columnIndex, item);
-                }
-            } else {
-                base.SetAt(rowIndex, columnIndex, item);
+                _grid.SetAt(rowIndex, columnIndex, default(T));
             }
         }
     }
