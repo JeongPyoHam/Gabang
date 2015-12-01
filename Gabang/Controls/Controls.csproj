@@ -49,6 +49,7 @@
     <Compile Include="DataInspect\DynamicGridCell.cs" />
     <Compile Include="DataInspect\DynamicGridStripe.cs" />
     <Compile Include="DataInspect\DynamicGridCellGenerator.cs" />
+    <Compile Include="DataInspect\SynchronizedStackPanel.cs" />
     <Compile Include="Data\GridByList.cs" />
     <Compile Include="Data\GridByDictionary.cs" />
     <Compile Include="Data\IGrid.cs" />
