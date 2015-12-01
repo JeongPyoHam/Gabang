@@ -12,12 +12,12 @@ namespace Gabang.Controls {
     /// <summary>
     /// Row of <see cref="VariableGrid"/>, which is ItemsControl itself
     /// </summary>
-    public class VariableGridRowOrg : ItemsControl {
-        static VariableGridRowOrg() {
-            DefaultStyleKeyProperty.OverrideMetadata(typeof(VariableGridRowOrg), new FrameworkPropertyMetadata(typeof(VariableGridRowOrg)));
+    public class DynamicGridRow : ItemsControl {
+        static DynamicGridRow() {
+            DefaultStyleKeyProperty.OverrideMetadata(typeof(DynamicGridRow), new FrameworkPropertyMetadata(typeof(DynamicGridRow)));
         }
 
-        public VariableGridRowOrg() {
+        public DynamicGridRow() {
         }
 
         public object Header { get; set; }
@@ -30,7 +30,7 @@ namespace Gabang.Controls {
 
         internal IScrollInfo ScrollOwner { get; private set; }
 
-        internal VariableGridOrg OwningJointGrid { get; private set; }
+        internal DynamicGrid OwningJointGrid { get; private set; }
 
         protected override DependencyObject GetContainerForItemOverride() {
             return new VariableGridCell();
@@ -47,7 +47,7 @@ namespace Gabang.Controls {
             base.OnApplyTemplate();
         }
 
-        internal void Prepare(VariableGridOrg owner, object item) {
+        internal void Prepare(DynamicGrid owner, object item) {
             if (!(item is IList)) {
                 throw new NotSupportedException("JointCollectionGridRow supports only IList for item");
             }
@@ -58,7 +58,7 @@ namespace Gabang.Controls {
             ItemsSource = items;
         }
 
-        internal void Clear(VariableGridOrg owner, object item) {
+        internal void Clear(DynamicGrid owner, object item) {
         }
 
         internal void NotifyScroll(ScrollEventArgs e) {

@@ -68,5 +68,5 @@
 
     </DataGrid>-->
 
-    <control:VariableGrid x:Name="VGrid"></control:VariableGrid>
+    <control:DynamicGrid x:Name="VGrid"></control:DynamicGrid>
 </Window>

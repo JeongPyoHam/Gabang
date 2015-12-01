@@ -19,13 +19,13 @@ namespace Gabang.Controls {
     /// Row Header
     /// Column Header
     /// </summary>
-    public class VariableGridOrg : MultiSelector {
+    public class DynamicGrid : MultiSelector {
 
-        static VariableGridOrg() {
-            DefaultStyleKeyProperty.OverrideMetadata(typeof(VariableGridOrg), new FrameworkPropertyMetadata(typeof(VariableGridOrg)));
+        static DynamicGrid() {
+            DefaultStyleKeyProperty.OverrideMetadata(typeof(DynamicGrid), new FrameworkPropertyMetadata(typeof(DynamicGrid)));
         }
 
-        public VariableGridOrg() {
+        public DynamicGrid() {
         }
 
         public override void OnApplyTemplate() {
@@ -40,7 +40,7 @@ namespace Gabang.Controls {
             Debug.WriteLine($"Horizontal ScrollBar: Row count({_visibleRows.Count})");
         }
 
-        List<VariableGridRowOrg> _visibleRows = new List<VariableGridRowOrg>();
+        List<DynamicGridRow> _visibleRows = new List<DynamicGridRow>();
         bool _isBarSet = false;
         internal void NotifyScrollInfo(double max, double offset, double viewportSize) {
             if (_isBarSet) return;
@@ -60,13 +60,13 @@ namespace Gabang.Controls {
         #region override
 
         protected override DependencyObject GetContainerForItemOverride() {
-            return new VariableGridRowOrg();
+            return new DynamicGridRow();
         }
 
         protected override void PrepareContainerForItemOverride(DependencyObject element, object item) {
             base.PrepareContainerForItemOverride(element, item);
 
-            VariableGridRowOrg row = (VariableGridRowOrg)element;
+            DynamicGridRow row = (DynamicGridRow)element;
             row.Prepare(this, item);
 
             _visibleRows.Add(row);
@@ -75,7 +75,7 @@ namespace Gabang.Controls {
         protected override void ClearContainerForItemOverride(DependencyObject element, object item) {
             base.ClearContainerForItemOverride(element, item);
 
-            VariableGridRowOrg row = (VariableGridRowOrg)element;
+            DynamicGridRow row = (DynamicGridRow)element;
             row.Clear(this, item);
 
             _visibleRows.Remove(row);
