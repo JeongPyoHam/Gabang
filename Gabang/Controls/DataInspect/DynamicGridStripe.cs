@@ -7,12 +7,12 @@ using System.Windows;
 using System.Windows.Controls;
 
 namespace Gabang.Controls {
-    public class VariableGridStack {
+    internal class DynamicGridStripe {
 
-        public VariableGridStack(Orientation stackingDirection, int index) {
+        public DynamicGridStripe(Orientation stackingDirection, int index) {
             this.Orientation = stackingDirection;
             this.Index = index;
-            this.LayoutSize = new MaxDouble();
+            this.LayoutSize = new MaxDouble(0.0);
         }
 
         public bool IsColumn {
@@ -42,11 +42,12 @@ namespace Gabang.Controls {
         public MaxDouble LayoutSize { get; }
 
         public double GetSizeConstraint() {
-            if (LayoutSize.Frozen) {
-                return LayoutSize.Max;
-            }
-
             return double.PositiveInfinity;
+            //if (LayoutSize.Frozen) {
+            //    return LayoutSize.Max;
+            //}
+
+            //return double.PositiveInfinity;
         }
 
 
@@ -75,14 +76,5 @@ namespace Gabang.Controls {
         }
 
         private Dictionary<int, VariableGridCell> _cells = new Dictionary<int, VariableGridCell>();
-    }
-
-    public class VariableGridColumn : VariableGridStack {
-
-        public VariableGridColumn(int index) : base(Orientation.Vertical, index) { }
-    }
-
-    public class VariableGridRow : VariableGridStack {
-        public VariableGridRow(int index) : base(Orientation.Horizontal, index) { }
     }
 }

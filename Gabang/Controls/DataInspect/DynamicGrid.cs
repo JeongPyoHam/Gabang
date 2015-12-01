@@ -11,14 +11,6 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 
 namespace Gabang.Controls {
-    /// <summary>
-    /// ItemsControl for two dimentional collection; collection of collection
-    /// Need to put some restriction on IList<IList<T>>
-    /// 
-    /// GridLine
-    /// Row Header
-    /// Column Header
-    /// </summary>
     public class DynamicGrid : MultiSelector {
 
         static DynamicGrid() {
@@ -45,17 +37,18 @@ namespace Gabang.Controls {
         internal void NotifyScrollInfo(double max, double offset, double viewportSize) {
             if (_isBarSet) return;
 
-            _isBarSet = true;
+            
             var bar = (ScrollBar)ControlHelper.GetChild(this, "HorizontalScrollBar");
+            if (bar != null) {
+                bar.Maximum = max;
+                bar.Value = offset;
+                bar.ViewportSize = viewportSize;
 
-            bar.Maximum = max;
-            bar.Value = offset;
-            bar.ViewportSize = viewportSize;
+                bar.Scroll += Bar_Scroll;
 
-            bar.Scroll += Bar_Scroll;
+                _isBarSet = true;
+            }
         }
-
-        public VariableGridCellGenerator Generator { get; set; }
 
         #region override
 
@@ -65,6 +58,8 @@ namespace Gabang.Controls {
 
         protected override void PrepareContainerForItemOverride(DependencyObject element, object item) {
             base.PrepareContainerForItemOverride(element, item);
+
+            int rowIndex = Items.IndexOf(item);
 
             DynamicGridRow row = (DynamicGridRow)element;
             row.Prepare(this, item);
@@ -81,23 +76,42 @@ namespace Gabang.Controls {
             _visibleRows.Remove(row);
         }
 
+        private DynamicGridDataSource _dataSource;
         protected override void OnItemsSourceChanged(IEnumerable oldValue, IEnumerable newValue) {
-            if (!(newValue is VariableGridDataSource)) {
-                throw new NotSupportedException($"JointGrid supports only {typeof(VariableGridDataSource)} for ItemsSource");
+            _dataSource = newValue as DynamicGridDataSource;
+            if (_dataSource == null) {
+                throw new NotSupportedException($"JointGrid supports only {typeof(DynamicGridDataSource)} for ItemsSource");
             }
 
             base.OnItemsSourceChanged(oldValue, newValue);
-
-            this.Generator = new VariableGridCellGenerator((VariableGridDataSource)newValue);
         }
 
         protected override Size MeasureOverride(Size constraint) {
+            NotifyScrollInfo(_dataSource.ColumnCount, 0, 10);
+
             var desired = base.MeasureOverride(constraint);
 
             return desired;
         }
 
         #endregion override
+
+        #region Column
+
+        private SortedList<int, DynamicGridStripe> _columns = new SortedList<int, DynamicGridStripe>();
+        internal DynamicGridStripe GetColumn(int index) {
+            DynamicGridStripe stack;
+            if (_columns.TryGetValue(index, out stack)) {
+                return stack;
+            }
+
+            stack = new DynamicGridStripe(Orientation.Vertical, index);
+            _columns.Add(index, stack);
+
+            return stack;
+        }
+
+        #endregion
     }
 
 }

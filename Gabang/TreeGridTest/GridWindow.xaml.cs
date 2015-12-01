@@ -26,7 +26,7 @@ namespace Gabang.TreeGridTest {
         public GridWindow() {
             InitializeComponent();
 
-            this.VGrid.ItemsSource = new VariableGridDataSource(RowCount, ColumnCount);
+            this.VGrid.ItemsSource = new DynamicGridDataSource(RowCount, ColumnCount);
         }
     }
 }

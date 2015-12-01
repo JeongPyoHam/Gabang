@@ -9,10 +9,10 @@ using System.Threading.Tasks;
 using System.Windows.Controls;
 
 namespace Gabang.Controls {
-    public class VariableGridCellGenerator {
-        private VariableGridDataSource _dataSource;
+    internal class DynamicGridCellGenerator {
+        private DynamicGridDataSource _dataSource;
 
-        public VariableGridCellGenerator(VariableGridDataSource dataSource) {
+        public DynamicGridCellGenerator(DynamicGridDataSource dataSource) {
             _dataSource = dataSource;
             RowCount = _dataSource.RowCount;
             ColumnCount = _dataSource.ColumnCount;
@@ -79,28 +79,28 @@ namespace Gabang.Controls {
             RemoveStacksExcept(_columns, except);
         }
 
-        private void RemoveStacksExcept(SortedList<int, VariableGridStack> stackDictionary,  Range except) {
+        private void RemoveStacksExcept(SortedList<int, DynamicGridStripe> stackDictionary,  Range except) {
             var toBeDeleted = stackDictionary.Keys.Where(key => !except.Contains(key)).ToList();
             foreach (var row in toBeDeleted) {
                 stackDictionary.Remove(row);
             }
         }
 
-        public VariableGridStack GetColumn(int index) {
-            return GetStack(_columns, index);
+        public DynamicGridStripe GetColumn(int index) {
+            return GetStack(Orientation.Vertical, _columns, index);
         }
 
-        public VariableGridStack GetRow(int index) {
-            return GetStack(_rows, index);
+        public DynamicGridStripe GetRow(int index) {
+            return GetStack(Orientation.Horizontal, _rows, index);
         }
 
-        private VariableGridStack GetStack(SortedList<int, VariableGridStack> stacks, int index) {
-            VariableGridStack stack;
+        private DynamicGridStripe GetStack(Orientation orientation, SortedList<int, DynamicGridStripe> stacks, int index) {
+            DynamicGridStripe stack;
             if (stacks.TryGetValue(index, out stack)) {
                 return stack;
             }
 
-            stack = new VariableGridColumn(index);
+            stack = new DynamicGridStripe(orientation, index);
             stacks.Add(index, stack);
 
             return stack;
@@ -109,15 +109,11 @@ namespace Gabang.Controls {
         public void FreezeLayoutSize() {
             // freeze remaining row and columns
             foreach (var row in _rows.Values) {
-                if (row.LayoutSize.Max.HasValue) {
-                    row.LayoutSize.Frozen = true;
-                }
+                row.LayoutSize.Frozen = true;
             }
 
             foreach (var column in _columns.Values) {
-                if (column.LayoutSize.Max.HasValue) {
-                    column.LayoutSize.Frozen = true;
-                }
+                column.LayoutSize.Frozen = true;
             }
         }
 
@@ -135,7 +131,7 @@ namespace Gabang.Controls {
             }
         }
 
-        private void ComputeStackPosition(SortedList<int, VariableGridStack> stacks, int startingIndex, out double computedOffset) {
+        private void ComputeStackPosition(SortedList<int, DynamicGridStripe> stacks, int startingIndex, out double computedOffset) {
             double offset = 0;
             computedOffset = 0;
             foreach (var key in stacks.Keys) {
@@ -146,12 +142,12 @@ namespace Gabang.Controls {
                 }
 
                 stack.LayoutPosition = offset;
-                offset += stack.LayoutSize.Max.Value;
+                offset += stack.LayoutSize.Max;
             }
         }
 
         // TODO: improve to better collection
-        private SortedList<int, VariableGridStack> _rows = new SortedList<int, VariableGridStack>();
-        private SortedList<int, VariableGridStack> _columns = new SortedList<int, VariableGridStack>();
+        private SortedList<int, DynamicGridStripe> _rows = new SortedList<int, DynamicGridStripe>();
+        private SortedList<int, DynamicGridStripe> _columns = new SortedList<int, DynamicGridStripe>();
     }
 }

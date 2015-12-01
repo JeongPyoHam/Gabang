@@ -22,25 +22,31 @@ namespace Gabang.Controls {
 
         public object Header { get; set; }
 
-        public double EstimatedHeight {
-            get {
-                return 20;
-            }
-        }
-
         internal IScrollInfo ScrollOwner { get; private set; }
 
         internal DynamicGrid OwningJointGrid { get; private set; }
 
         protected override DependencyObject GetContainerForItemOverride() {
-            return new VariableGridCell();
+            return new DynamicGridCell();
         }
 
         protected override void PrepareContainerForItemOverride(DependencyObject element, object item) {
             base.PrepareContainerForItemOverride(element, item);
 
-            var cell = (VariableGridCell)element;
-            //cell.Prepare(this, item);
+            var cell = (DynamicGridCell)element;
+
+            int column = this.Items.IndexOf(item);
+            if (column == -1) {
+                throw new InvalidOperationException("Item is not found in collection");
+            }
+            cell.Prepare(OwningJointGrid.GetColumn(column));
+        }
+
+        protected override void ClearContainerForItemOverride(DependencyObject element, object item) {
+            base.ClearContainerForItemOverride(element, item);
+
+            var cell = (DynamicGridCell)element;
+            cell.CleanUp();
         }
 
         public override void OnApplyTemplate() {
@@ -73,7 +79,7 @@ namespace Gabang.Controls {
                 var sv = (VirtualizingStackPanel)ControlHelper.GetChild(this, typeof(VirtualizingStackPanel));
                 this.ScrollOwner = sv;
 
-                OwningJointGrid.NotifyScrollInfo(ScrollOwner.ExtentWidth, ScrollOwner.HorizontalOffset, ScrollOwner.ViewportWidth);
+                //OwningJointGrid.NotifyScrollInfo(ScrollOwner.ExtentWidth, ScrollOwner.HorizontalOffset, ScrollOwner.ViewportWidth);
             }
 
             return desired;

@@ -4,11 +4,26 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Gabang.Controls {
+    public struct GridItem {
+        public GridItem(int row, int column) {
+            Row = row;
+            Column = column;
+        }
+
+        public int Row { get; }
+
+        public int Column { get; }
+
+        public override string ToString() {
+            return string.Format("{0}:{1}", Row, Column);
+        }
+    }
+
 
     /// <summary>
     /// A simulated collection that provides integer range
     /// </summary>
-    public class IntegerList : IList<int>, IList {
+    public class IntegerList : IList<GridItem>, IList {
         public IntegerList(int start, int count) {
             Start = start;
             Count = count;
@@ -18,10 +33,10 @@ namespace Gabang.Controls {
 
         #region IList support
 
-        public int this[int index] {
+        public GridItem this[int index] {
             get {
                 //Debug.WriteLine($"IntegerList[{Start}][{index}] getter");
-                return index + Start;
+                return new GridItem(Start, index);
             }
 
             set {
@@ -45,11 +60,11 @@ namespace Gabang.Controls {
             }
 
             set {
-                this[index] = (int)value;
+                this[index] = (GridItem)value;
             }
         }
 
-        public void Add(int item) {
+        public void Add(GridItem item) {
             throw new NotSupportedException($"{typeof(IntegerList)} doesn't support adding new item");
         }
 
@@ -57,31 +72,31 @@ namespace Gabang.Controls {
             throw new NotSupportedException($"{typeof(IntegerList)} doesn't support clearing items");
         }
 
-        public bool Contains(int item) {
-            return (item >= Start && item < (Start + Count));
+        public bool Contains(GridItem item) {
+            return (item.Row == Start && item.Column >= 0 && item.Column < Count);
         }
 
-        public void CopyTo(int[] array, int arrayIndex) {
+        public void CopyTo(GridItem[] array, int arrayIndex) {
             throw new NotImplementedException();
         }
 
-        public IEnumerator<int> GetEnumerator() {
+        public IEnumerator<GridItem> GetEnumerator() {
             for (int i = 0; i < Count; i++) {
                 yield return this[i];
             }
         }
 
-        public int IndexOf(int item) {
+        public int IndexOf(GridItem item) {
             if (!Contains(item)) return -1;
 
-            return item - Start;
+            return item.Column;
         }
 
-        public void Insert(int index, int item) {
+        public void Insert(int index, GridItem item) {
             throw new NotSupportedException($"{typeof(IntegerList)} doesn't support inserting item");
         }
 
-        public bool Remove(int item) {
+        public bool Remove(GridItem item) {
             throw new NotSupportedException($"{typeof(IntegerList)} doesn't support removing item");
         }
 
@@ -105,8 +120,8 @@ namespace Gabang.Controls {
         }
 
         public int IndexOf(object value) {
-            if (value is int) {
-                return IndexOf((int)value);
+            if (value is GridItem) {
+                return IndexOf((GridItem)value);
             }
             return -1;
         }
