@@ -226,8 +226,8 @@
         <Setter Property="ItemsPanel">
             <Setter.Value>
                 <ItemsPanelTemplate>
-                    <local:VariableGridPanelOrg Orientation="Vertical">
-                    </local:VariableGridPanelOrg>
+                    <VirtualizingStackPanel Orientation="Vertical" />
+
                 </ItemsPanelTemplate>
             </Setter.Value>
         </Setter>

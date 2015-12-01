@@ -65,12 +65,11 @@
     <Compile Include="VirtualizingGrid\VariableGrid.cs" />
     <Compile Include="VirtualizingGrid\VariableGridCellGenerator.cs" />
     <Compile Include="VirtualizingGrid\VariableGridDataSource.cs" />
-    <Compile Include="DataInspect\VariableGridOrg.cs" />
+    <Compile Include="DataInspect\DynamicGrid.cs" />
     <Compile Include="VirtualizingGrid\VariableGridCell.cs" />
     <Compile Include="VirtualizingGrid\VariableGridColumn.cs" />
-    <Compile Include="VirtualizingGrid\VariableGridPanelOrg.cs" />
     <Compile Include="VirtualizingGrid\VirtualizingGridPanel.cs" />
-    <Compile Include="DataInspect\VariableGridRowOrg.cs" />
+    <Compile Include="DataInspect\DynamicGridRow.cs" />
     <Page Include="Themes\Generic.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
