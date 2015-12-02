@@ -12,19 +12,22 @@ namespace Gabang.Controls {
     /// <summary>
     /// Row of <see cref="VariableGrid"/>, which is ItemsControl itself
     /// </summary>
-    public class DynamicGridRow : ItemsControl {
+    internal class DynamicGridRow : ItemsControl, SharedScrollInfo {
         static DynamicGridRow() {
             DefaultStyleKeyProperty.OverrideMetadata(typeof(DynamicGridRow), new FrameworkPropertyMetadata(typeof(DynamicGridRow)));
         }
 
         public DynamicGridRow() {
+            RealizedItemLink = new LinkedListNode<DynamicGridRow>(this);
         }
+
+        internal LinkedListNode<DynamicGridRow> RealizedItemLink { get; }
 
         public object Header { get; set; }
 
-        internal IScrollInfo ScrollOwner { get; private set; }
-
         internal DynamicGrid OwningJointGrid { get; private set; }
+
+        public event EventHandler<SharedScrollChangedEventArgs> SharedScrollChanged;
 
         protected override DependencyObject GetContainerForItemOverride() {
             return new DynamicGridCell();
@@ -67,28 +70,16 @@ namespace Gabang.Controls {
         internal void Clear(DynamicGrid owner, object item) {
         }
 
-        internal void NotifyScroll(ScrollEventArgs e) {
-            ScrollOwner?.SetHorizontalOffset(e.NewValue);
-        }
-
-        protected override Size MeasureOverride(Size constraint) {
-            var desired = base.MeasureOverride(constraint);
-
-            if (this.ScrollOwner == null) {
-
-                var sv = (VirtualizingStackPanel)ControlHelper.GetChild(this, typeof(VirtualizingStackPanel));
-                this.ScrollOwner = sv;
-
-                //OwningJointGrid.NotifyScrollInfo(ScrollOwner.ExtentWidth, ScrollOwner.HorizontalOffset, ScrollOwner.ViewportWidth);
+        internal void ScrollChanged() {
+            if (SharedScrollChanged != null) {
+                SharedScrollChanged(
+                    this,
+                    new SharedScrollChangedEventArgs(
+                        Orientation.Horizontal,
+                        OwningJointGrid.ExtentWidth,
+                        OwningJointGrid.ViewportWidth,
+                        OwningJointGrid.HorizontalOffset));
             }
-
-            return desired;
-        }
-
-        protected override Size ArrangeOverride(Size arrangeBounds) {
-            var arranged = base.ArrangeOverride(arrangeBounds);
-
-            return arranged;
         }
     }
 }
