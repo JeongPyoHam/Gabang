@@ -89,10 +89,13 @@ namespace Gabang.Controls {
 
         internal void CleanUp(DynamicGrid owner, object item) {
             // when VirtualizationMode == Recycling, next lines must not be called as system calls them
-            //foreach (var cell in _realizedCells) {
-            //    cell.CleanUp();
-            //}
-            //_realizedCells.Clear();
+            var mode = VirtualizingPanel.GetVirtualizationMode(ParentGrid);
+            if (mode != VirtualizationMode.Recycling) {
+                foreach (var cell in _realizedCells) {
+                    cell.CleanUp();
+                }
+                _realizedCells.Clear();
+            }
         }
 
         internal void ScrollChanged() {
