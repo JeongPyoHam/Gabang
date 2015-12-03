@@ -12,9 +12,6 @@ namespace Gabang.Controls {
             _max = initialValue;
         }
 
-        public bool Frozen { get; set; }
-
-
         private double _max;
         /// <summary>
         /// Maximum value
@@ -31,16 +28,13 @@ namespace Gabang.Controls {
         public event EventHandler MaxChanged;
 
         private void SetValue(double value) {
-            //if (!Frozen) {
-            {
-                if (MaxChanged != null) {
-                    if (value > _max) {
-                        _max = value;
-                        MaxChanged(this, EventArgs.Empty);
-                    }
-                } else {
-                    _max = Math.Max(_max, value);
+            if (MaxChanged != null) {
+                if (value > _max) {
+                    _max = value;
+                    MaxChanged(this, EventArgs.Empty);
                 }
+            } else {
+                _max = Math.Max(_max, value);
             }
         }
     }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -27,7 +28,16 @@ namespace Gabang.Controls {
 
         internal DynamicGrid OwningJointGrid { get; private set; }
 
-        public event EventHandler<SharedScrollChangedEventArgs> SharedScrollChanged;
+        #region SharedScrollInfo support
+
+        public LayoutInfo GetLayoutInfo(Size size) {
+            Debug.Assert(OwningJointGrid != null);
+            return OwningJointGrid.GetLayoutInfo(size);
+        }
+
+        public event EventHandler SharedScrollChanged;
+
+        #endregion
 
         protected override DependencyObject GetContainerForItemOverride() {
             return new DynamicGridCell();
@@ -72,13 +82,7 @@ namespace Gabang.Controls {
 
         internal void ScrollChanged() {
             if (SharedScrollChanged != null) {
-                SharedScrollChanged(
-                    this,
-                    new SharedScrollChangedEventArgs(
-                        Orientation.Horizontal,
-                        OwningJointGrid.ExtentWidth,
-                        OwningJointGrid.ViewportWidth,
-                        OwningJointGrid.HorizontalOffset));
+                SharedScrollChanged(this, EventArgs.Empty);
             }
         }
     }

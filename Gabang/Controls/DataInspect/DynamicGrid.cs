@@ -49,6 +49,10 @@ namespace Gabang.Controls {
                 throw new NotSupportedException($"JointGrid supports only {typeof(DynamicGridDataSource)} for ItemsSource");
             }
 
+            ExtentWidth = _dataSource.ColumnCount;
+            ViewportWidth = 10;
+            ScrollableWidth = ExtentWidth - ViewportWidth;
+
             base.OnItemsSourceChanged(oldValue, newValue);
         }
 
@@ -78,9 +82,9 @@ namespace Gabang.Controls {
 
         private void LayoutSize_MaxChanged(object sender, EventArgs e) {
             double extent = ComputeLayoutPosition();
-            ExtentWidth = extent;
-            ScrollableWidth = extent - 20.0;
-            ViewportWidth = 20.0;
+            //ExtentWidth = extent;
+            //ScrollableWidth = extent - 20.0;
+            //ViewportWidth = 20.0;
         }
 
         private const double EstimatedWidth = 20.0; // TODO: configurable
@@ -102,6 +106,40 @@ namespace Gabang.Controls {
             acc += (_dataSource.ColumnCount - index) * EstimatedWidth;
 
             return acc;
+        }
+
+        Size _panelSize;
+        LayoutInfo _layoutInfo;
+        internal void OnReportPanelSize(Size size) {
+            _panelSize = size;
+
+#if PIXELBASED
+            double horizontalOffset = HorizontalOffset;
+            int itemIndex = (int)Math.Floor(horizontalOffset / EstimatedWidth);
+
+            _layoutInfo = new LayoutInfo() {
+                FirstItemIndex = itemIndex,
+                FirstItemOffset = horizontalOffset - (itemIndex * EstimatedWidth),
+                ItemCountInViewport = (int)Math.Ceiling(size.Width / EstimatedWidth),
+            };
+#else
+            int horizontalOffset = (int)HorizontalOffset;
+
+            double viewportWidth = Math.Ceiling(size.Width / EstimatedWidth);
+
+            ViewportWidth = viewportWidth;
+            ScrollableWidth = ExtentWidth - viewportWidth;
+
+            _layoutInfo = new LayoutInfo() {
+                FirstItemIndex = horizontalOffset,
+                FirstItemOffset = 0.0,
+                ItemCountInViewport = (int)viewportWidth,
+            };
+#endif
+        }
+
+        internal LayoutInfo GetLayoutInfo(Size size) {
+            return _layoutInfo;
         }
 
         public static readonly DependencyProperty ScrollableWidthProperty =
@@ -183,6 +221,8 @@ namespace Gabang.Controls {
 
         private void Scrollbar_Scroll(object sender, ScrollEventArgs e) {
             if (e.ScrollEventType == ScrollEventType.EndScroll) {
+                OnReportPanelSize(_panelSize);  // refresh viewport
+
                 HorizontalOffset = e.NewValue;
 
                 foreach (var row in _realizedRows) {
@@ -191,6 +231,6 @@ namespace Gabang.Controls {
             }
         }
 
-        #endregion
+#endregion
     }
 }

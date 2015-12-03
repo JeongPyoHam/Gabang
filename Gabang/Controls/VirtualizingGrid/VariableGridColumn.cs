@@ -42,9 +42,9 @@ namespace Gabang.Controls {
         public MaxDouble LayoutSize { get; }
 
         public double GetSizeConstraint() {
-            if (LayoutSize.Frozen) {
-                return LayoutSize.Max;
-            }
+            //if (LayoutSize.Frozen) {
+            //    return LayoutSize.Max;
+            //}
 
             return double.PositiveInfinity;
         }
