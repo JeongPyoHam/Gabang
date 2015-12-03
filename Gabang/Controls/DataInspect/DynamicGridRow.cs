@@ -14,6 +14,8 @@ namespace Gabang.Controls {
     /// Row of <see cref="VariableGrid"/>, which is ItemsControl itself
     /// </summary>
     internal class DynamicGridRow : ItemsControl, SharedScrollInfo {
+        private LinkedList<DynamicGridCell> _realizedCells = new LinkedList<DynamicGridCell>();
+
         static DynamicGridRow() {
             DefaultStyleKeyProperty.OverrideMetadata(typeof(DynamicGridRow), new FrameworkPropertyMetadata(typeof(DynamicGridRow)));
         }
@@ -24,7 +26,20 @@ namespace Gabang.Controls {
 
         internal LinkedListNode<DynamicGridRow> RealizedItemLink { get; }
 
-        public object Header { get; set; }
+        public static readonly DependencyProperty HeaderProperty =
+                DependencyProperty.Register(
+                        "Header",
+                        typeof(object),
+                        typeof(DynamicGridRow),
+                        new FrameworkPropertyMetadata(null));
+
+        public object Header {
+            get { return GetValue(HeaderProperty); }
+            set { SetValue(HeaderProperty, value); }
+        }
+
+        internal DynamicGridStripe HeaderStripe { get; set; }
+
 
         internal DynamicGrid OwningJointGrid { get; private set; }
 
@@ -47,7 +62,7 @@ namespace Gabang.Controls {
             base.PrepareContainerForItemOverride(element, item);
 
             var cell = (DynamicGridCell)element;
-
+            _realizedCells.AddFirst(cell.RealizedItemLink);
             int column = this.Items.IndexOf(item);
             if (column == -1) {
                 throw new InvalidOperationException("Item is not found in collection");
@@ -59,11 +74,18 @@ namespace Gabang.Controls {
             base.ClearContainerForItemOverride(element, item);
 
             var cell = (DynamicGridCell)element;
+            _realizedCells.Remove(cell.RealizedItemLink);
             cell.CleanUp();
         }
 
         public override void OnApplyTemplate() {
             base.OnApplyTemplate();
+
+            // row header
+            var rowHeader = (DynamicGridRowHeader)ControlHelper.GetChild(this, typeof(DynamicGridRowHeader));
+            if (rowHeader != null) {
+                rowHeader.Prepare(OwningJointGrid.RowHeaderColumn);
+            }
         }
 
         internal void Prepare(DynamicGrid owner, object item) {
@@ -75,9 +97,20 @@ namespace Gabang.Controls {
 
             var items = (IList)item;
             ItemsSource = items;
+
+            
         }
 
-        internal void Clear(DynamicGrid owner, object item) {
+        internal void CleanUp(DynamicGrid owner, object item) {
+            var rowHeader = (DynamicGridRowHeader)ControlHelper.GetChild(this, typeof(DynamicGridRowHeader));
+            if (rowHeader != null) {
+                rowHeader.CleanUp();
+
+                foreach (var cell in _realizedCells) {
+                    cell.CleanUp();
+                }
+                _realizedCells.Clear();
+            }
         }
 
         internal void ScrollChanged() {

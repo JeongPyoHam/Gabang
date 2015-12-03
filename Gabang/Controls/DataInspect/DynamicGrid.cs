@@ -13,7 +13,6 @@ using System.Windows.Input;
 
 namespace Gabang.Controls {
     public class DynamicGrid : MultiSelector {
-
         private LinkedList<DynamicGridRow> _realizedRows = new LinkedList<DynamicGridRow>();
 
         static DynamicGrid() {
@@ -31,6 +30,8 @@ namespace Gabang.Controls {
 
             DynamicGridRow row = (DynamicGridRow)element;
             _realizedRows.AddFirst(row.RealizedItemLink);
+            row.Header = _dataSource.IndexOf(item);
+            row.HeaderStripe = RowHeaderColumn;
             row.Prepare(this, item);
         }
 
@@ -38,8 +39,12 @@ namespace Gabang.Controls {
             base.ClearContainerForItemOverride(element, item);
 
             DynamicGridRow row = (DynamicGridRow)element;
+
+            row.Header = null;
+            row.HeaderStripe = null;
+
             _realizedRows.Remove(row.RealizedItemLink);
-            row.Clear(this, item);
+            row.CleanUp(this, item);
         }
 
         private DynamicGridDataSource _dataSource;
@@ -66,6 +71,8 @@ namespace Gabang.Controls {
 
         #region Column
 
+        internal DynamicGridStripe RowHeaderColumn { get; } = new DynamicGridStripe(Orientation.Vertical, 0);
+
         private SortedList<int, DynamicGridStripe> _columns = new SortedList<int, DynamicGridStripe>();
         internal DynamicGridStripe GetColumn(int index) {
             DynamicGridStripe stack;
@@ -74,17 +81,9 @@ namespace Gabang.Controls {
             }
 
             stack = new DynamicGridStripe(Orientation.Vertical, index);
-            stack.LayoutSize.MaxChanged += LayoutSize_MaxChanged; // TODO: clean up columns
             _columns.Add(index, stack);
 
             return stack;
-        }
-
-        private void LayoutSize_MaxChanged(object sender, EventArgs e) {
-            double extent = ComputeLayoutPosition();
-            //ExtentWidth = extent;
-            //ScrollableWidth = extent - 20.0;
-            //ViewportWidth = 20.0;
         }
 
         private const double EstimatedWidth = 20.0; // TODO: configurable
@@ -135,6 +134,11 @@ namespace Gabang.Controls {
                 FirstItemOffset = 0.0,
                 ItemCountInViewport = (int)viewportWidth,
             };
+
+            var toRemove = _columns.Where(c => c.Key < _layoutInfo.FirstItemIndex || c.Key >= (_layoutInfo.FirstItemIndex + _layoutInfo.ItemCountInViewport)).ToList();
+            foreach (var item in toRemove) {
+                _columns.Remove(item.Key);
+            }
 #endif
         }
 

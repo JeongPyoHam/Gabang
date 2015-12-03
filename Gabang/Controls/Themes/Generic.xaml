@@ -145,7 +145,14 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type local:DynamicGridRow}">
-                    <ItemsPresenter />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <local:DynamicGridRowHeader Content="{Binding Header, RelativeSource={RelativeSource AncestorType={x:Type local:DynamicGridRow}}}" />
+                        <ItemsPresenter Grid.Column="1" />
+                    </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -156,12 +163,15 @@
         <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel"/>
         <Setter Property="VirtualizingPanel.CacheLength" Value="1"/>
         <Setter Property="VirtualizingPanel.CacheLengthUnit" Value="Pixel"/>
-        <Setter Property="VirtualizingPanel.IsVirtualizing" Value="true"/>
-        <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
+        <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True"/>
+        <!--<Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />-->
         <Setter Property="ItemsPanel">
             <Setter.Value>
                 <ItemsPanelTemplate>
-                    <local:DynamicGridRowsPanel Orientation="Vertical" />
+                    <local:DynamicGridRowsPanel Orientation="Vertical" 
+                                                VirtualizingPanel.IsVirtualizing="true"
+                                                VirtualizingPanel.CacheLength="1"
+                                                VirtualizingPanel.CacheLengthUnit="Pixel"/>
                 </ItemsPanelTemplate>
             </Setter.Value>
         </Setter>

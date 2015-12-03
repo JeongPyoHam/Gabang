@@ -43,7 +43,13 @@ namespace Gabang.Controls {
 
                 // TODO: doesn't support panel change on the fly yet.
                 sharedscrollinit = true;
+
+                VirtualizingStackPanel.AddCleanUpVirtualizedItemHandler(this, CleanUpVirtualizedItem);
             }
+        }
+
+        private static void CleanUpVirtualizedItem(object sender, CleanUpVirtualizedItemEventArgs e) {
+            var me = (DynamicGridCellsPanel)sender;
         }
 
         private void SharedScrollChanged(object sender, EventArgs e) {
@@ -107,8 +113,6 @@ namespace Gabang.Controls {
                 }
             }
 
-            Debug.WriteLine("Available:{0} Desired:{1} start:{2} count:{3}", availableSize.Width, width, startIndex, finalCount);
-
             Size desired = new Size(width, height);
 
             Debug.Assert(finalCount >= 1);
@@ -119,8 +123,6 @@ namespace Gabang.Controls {
 
         protected override Size ArrangeOverride(Size finalSize) {
             IItemContainerGenerator generator = this.ItemContainerGenerator;
-
-            Debug.WriteLine("Arrange:Items.Count:{0}", InternalChildren.Count);
 
             double x = 0.0;
             for (int i = 0; i < InternalChildren.Count; i++) {
@@ -137,8 +139,6 @@ namespace Gabang.Controls {
         private void CleanUpItems(int minDesiredGenerated, int maxDesiredGenerated) {
             UIElementCollection children = this.InternalChildren;
             IItemContainerGenerator generator = this.ItemContainerGenerator;
-
-            Debug.WriteLine("Cleanup: min:{0} max:{1} start:{2} end:{3}", minDesiredGenerated, maxDesiredGenerated, InternalChildren[0].ToString(), InternalChildren[InternalChildren.Count -1].ToString());
 
             for (int i = children.Count - 1; i >= 0; i--) {
                 GeneratorPosition childGeneratorPos = new GeneratorPosition(i, 0);

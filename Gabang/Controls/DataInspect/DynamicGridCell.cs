@@ -16,6 +16,12 @@ namespace Gabang.Controls {
             DefaultStyleKeyProperty.OverrideMetadata(typeof(DynamicGridCell), new FrameworkPropertyMetadata(typeof(DynamicGridCell)));
         }
 
+        public DynamicGridCell() {
+            RealizedItemLink = new LinkedListNode<DynamicGridCell>(this);
+        }
+
+        internal LinkedListNode<DynamicGridCell> RealizedItemLink { get; }
+
         /// <summary>
         /// Vertical item index
         /// </summary>
@@ -32,7 +38,7 @@ namespace Gabang.Controls {
 
         internal DynamicGridStripe ColumnStripe { get; set; }
 
-        internal void Prepare(DynamicGridStripe columnStipe) {
+        internal virtual void Prepare(DynamicGridStripe columnStipe) {
             if (ColumnStripe != null) {
                 ColumnStripe.LayoutSize.MaxChanged -= LayoutSize_MaxChanged;
             }
@@ -45,17 +51,16 @@ namespace Gabang.Controls {
             InvalidateMeasure();
         }
 
-
-
         /// <summary>
         /// Clean up data when virtualized
         /// </summary>
-        internal void CleanUp() {
+        internal virtual void CleanUp() {
             this.Content = null;
 
             if (ColumnStripe != null) {
                 ColumnStripe.LayoutSize.MaxChanged -= LayoutSize_MaxChanged;
             }
+            ColumnStripe = null;
         }
 
         protected override Size MeasureOverride(Size constraint) {

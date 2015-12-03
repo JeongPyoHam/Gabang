@@ -47,8 +47,9 @@
     <Compile Include="BindableBase.cs" />
     <Compile Include="BooleanToVisibilityConverter.cs" />
     <Compile Include="DataInspect\DynamicGridCell.cs" />
+    <Compile Include="DataInspect\DynamicGridRowHeader.cs" />
     <Compile Include="DataInspect\DynamicGridRowsPanel.cs" />
-    <Compile Include="DataInspect\DynamicGridStackPanel.cs" />
+    <Compile Include="DataInspect\DynamicGridCellsPanel.cs" />
     <Compile Include="DataInspect\DynamicGridStripe.cs" />
     <Compile Include="SynchronizedStackPanel.cs" />
     <Compile Include="Data\GridByList.cs" />
