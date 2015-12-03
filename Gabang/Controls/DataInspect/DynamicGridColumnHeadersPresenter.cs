@@ -8,11 +8,9 @@ using System.Windows.Controls;
 
 namespace Gabang.Controls {
     internal class DynamicGridColumnHeadersPresenter : ItemsControl, SharedScrollInfo {
-
         static DynamicGridColumnHeadersPresenter() {
             DefaultStyleKeyProperty.OverrideMetadata(typeof(DynamicGridColumnHeadersPresenter), new FrameworkPropertyMetadata(typeof(DynamicGridColumnHeadersPresenter)));
         }
-
 
         public override void OnApplyTemplate() {
             base.OnApplyTemplate();
@@ -47,13 +45,6 @@ namespace Gabang.Controls {
             if (SharedScrollChanged != null) {
                 SharedScrollChanged(this, EventArgs.Empty);
             }
-        }
-
-        protected override Size MeasureOverride(Size constraint) {
-            var desired = base.MeasureOverride(constraint);
-
-            return desired;
-            //return new Size(desired.Width, 10);
         }
 
         #region SharedScrollInfo

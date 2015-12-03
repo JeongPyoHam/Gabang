@@ -29,7 +29,7 @@ namespace Gabang.Controls {
             base.PrepareContainerForItemOverride(element, item);
 
             DynamicGridRow row = (DynamicGridRow)element;
-            _realizedRows.AddFirst(row.RealizedItemLink);
+            _realizedRows.AddFirst(row.Track);
             row.Header = _dataSource.IndexOf(item);
             row.Prepare(this, item);
         }
@@ -41,7 +41,7 @@ namespace Gabang.Controls {
 
             row.Header = null;
 
-            _realizedRows.Remove(row.RealizedItemLink);
+            _realizedRows.Remove(row.Track);
             row.CleanUp(this, item);
         }
 

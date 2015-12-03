@@ -16,21 +16,7 @@ namespace Gabang.Controls {
             DefaultStyleKeyProperty.OverrideMetadata(typeof(DynamicGridCell), new FrameworkPropertyMetadata(typeof(DynamicGridCell)));
         }
 
-        internal LinkedListNode<DynamicGridCell> RealizedItemLink { get; private set; }
-
-        /// <summary>
-        /// Vertical item index
-        /// </summary>
-        [DefaultValue(-1)]
-        public int Row { get; set; }
-
-        /// <summary>
-        /// Horizontal item index
-        /// </summary>
-        [DefaultValue(-1)]
-        public int Column { get; set; }
-
-        internal DynamicGridStripe RowStripe { get; set; }
+        internal LinkedListNode<DynamicGridCell> Track { get; private set; }
 
         internal DynamicGridStripe ColumnStripe { get; set; }
 
@@ -42,7 +28,7 @@ namespace Gabang.Controls {
             ColumnStripe = columnStipe;
             ColumnStripe.LayoutSize.MaxChanged += LayoutSize_MaxChanged;
 
-            RealizedItemLink = new LinkedListNode<DynamicGridCell>(this);
+            Track = new LinkedListNode<DynamicGridCell>(this);
         }
 
         private void LayoutSize_MaxChanged(object sender, EventArgs e) {
@@ -58,24 +44,15 @@ namespace Gabang.Controls {
             if (ColumnStripe != null) {
                 ColumnStripe.LayoutSize.MaxChanged -= LayoutSize_MaxChanged;
             }
-            //ColumnStripe = null;
+            ColumnStripe = null;
         }
 
         protected override Size MeasureOverride(Size constraint) {
-
-            if (RowStripe != null) {
-                constraint.Height = Math.Min(constraint.Height, RowStripe.GetSizeConstraint());
-            }
-
             if (ColumnStripe != null) {
                 constraint.Width = Math.Min(constraint.Width, ColumnStripe.GetSizeConstraint());
             }
 
             Size desired = base.MeasureOverride(constraint);
-
-            if (RowStripe != null) {
-                RowStripe.LayoutSize.Max = desired.Height;
-            }
 
             if (ColumnStripe != null) {
                 ColumnStripe.LayoutSize.Max = desired.Width;

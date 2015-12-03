@@ -10,9 +10,6 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 
 namespace Gabang.Controls {
-    /// <summary>
-    /// Row of <see cref="VariableGrid"/>, which is ItemsControl itself
-    /// </summary>
     internal class DynamicGridRow : ItemsControl, SharedScrollInfo {
         private LinkedList<DynamicGridCell> _realizedCells = new LinkedList<DynamicGridCell>();
 
@@ -21,10 +18,10 @@ namespace Gabang.Controls {
         }
 
         public DynamicGridRow() {
-            RealizedItemLink = new LinkedListNode<DynamicGridRow>(this);
+            Track = new LinkedListNode<DynamicGridRow>(this);
         }
 
-        internal LinkedListNode<DynamicGridRow> RealizedItemLink { get; }
+        internal LinkedListNode<DynamicGridRow> Track { get; }
 
         public static readonly DependencyProperty HeaderProperty =
                 DependencyProperty.Register(
@@ -65,14 +62,14 @@ namespace Gabang.Controls {
             }
             cell.Prepare(ParentGrid.GetColumn(column));
 
-            _realizedCells.AddFirst(cell.RealizedItemLink);
+            _realizedCells.AddFirst(cell.Track);
         }
 
         protected override void ClearContainerForItemOverride(DependencyObject element, object item) {
             base.ClearContainerForItemOverride(element, item);
 
             var cell = (DynamicGridCell)element;
-            _realizedCells.Remove(cell.RealizedItemLink);
+            _realizedCells.Remove(cell.Track);
             cell.CleanUp();
         }
 
