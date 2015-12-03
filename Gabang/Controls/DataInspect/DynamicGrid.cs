@@ -31,7 +31,6 @@ namespace Gabang.Controls {
             DynamicGridRow row = (DynamicGridRow)element;
             _realizedRows.AddFirst(row.RealizedItemLink);
             row.Header = _dataSource.IndexOf(item);
-            row.HeaderStripe = RowHeaderColumn;
             row.Prepare(this, item);
         }
 
@@ -41,7 +40,6 @@ namespace Gabang.Controls {
             DynamicGridRow row = (DynamicGridRow)element;
 
             row.Header = null;
-            row.HeaderStripe = null;
 
             _realizedRows.Remove(row.RealizedItemLink);
             row.CleanUp(this, item);
@@ -69,9 +67,31 @@ namespace Gabang.Controls {
 
         #endregion override
 
-        #region Column
+        #region RowHeader
 
-        internal DynamicGridStripe RowHeaderColumn { get; } = new DynamicGridStripe(Orientation.Vertical, 0);
+        public double RowHeaderActualWidth {
+            get { return (double)GetValue(RowHeaderActualWidthProperty); }
+            internal set { SetValue(RowHeaderActualWidthPropertyKey, value); }
+        }
+
+        private static readonly DependencyPropertyKey RowHeaderActualWidthPropertyKey =
+            DependencyProperty.RegisterReadOnly("RowHeaderActualWidth", typeof(double), typeof(DynamicGrid), new FrameworkPropertyMetadata(0.0, new PropertyChangedCallback(OnNotifyRowHeaderPropertyChanged)));
+
+        public static readonly DependencyProperty RowHeaderActualWidthProperty = RowHeaderActualWidthPropertyKey.DependencyProperty;
+
+        private static void OnNotifyRowHeaderPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) {
+            ((DynamicGrid)d).OnNotifyRowHeaderPropertyChanged();
+        }
+
+        private void OnNotifyRowHeaderPropertyChanged() {
+            foreach (var row in _realizedRows) {
+                row.NotifyRowHeader();
+            }
+        }
+
+        #endregion
+
+        #region Column
 
         private SortedList<int, DynamicGridStripe> _columns = new SortedList<int, DynamicGridStripe>();
         internal DynamicGridStripe GetColumn(int index) {

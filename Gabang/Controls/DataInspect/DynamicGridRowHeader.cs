@@ -4,20 +4,44 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace Gabang.Controls {
-    internal class DynamicGridRowHeader : DynamicGridCell {
+    internal class DynamicGridRowHeader : ContentControl {
+        public override void OnApplyTemplate() {
+            base.OnApplyTemplate();
 
-        internal override void Prepare(DynamicGridStripe columnStipe) {
-            base.Prepare(columnStipe);
-        }
-
-        internal override void CleanUp() {
-            base.CleanUp();
+            DynamicGridRow row = ParentRow;
+            if (row != null) {
+                row.RowHeader = this;
+            }
         }
 
         protected override Size MeasureOverride(Size constraint) {
-            return base.MeasureOverride(constraint);
+            Size baseSize = base.MeasureOverride(constraint);
+
+            var grid = ParentGrid;
+            if (grid == null) {
+                return baseSize;
+            }
+
+            if (baseSize.Width > grid.RowHeaderActualWidth) {
+                grid.RowHeaderActualWidth = baseSize.Width;
+            }
+
+            return new Size(grid.RowHeaderActualWidth, baseSize.Height);
+        }
+
+        internal DynamicGridRow ParentRow {
+            get {
+                return TreeHelper.FindParent<DynamicGridRow>(this);
+            }
+        }
+
+        internal DynamicGrid ParentGrid {
+            get {
+                return ParentRow.ParentGrid;
+            }
         }
     }
 }

@@ -38,16 +38,13 @@ namespace Gabang.Controls {
             set { SetValue(HeaderProperty, value); }
         }
 
-        internal DynamicGridStripe HeaderStripe { get; set; }
-
-
-        internal DynamicGrid OwningJointGrid { get; private set; }
+        internal DynamicGrid ParentGrid { get; private set; }
 
         #region SharedScrollInfo support
 
         public LayoutInfo GetLayoutInfo(Size size) {
-            Debug.Assert(OwningJointGrid != null);
-            return OwningJointGrid.GetLayoutInfo(size);
+            Debug.Assert(ParentGrid != null);
+            return ParentGrid.GetLayoutInfo(size);
         }
 
         public event EventHandler SharedScrollChanged;
@@ -62,12 +59,13 @@ namespace Gabang.Controls {
             base.PrepareContainerForItemOverride(element, item);
 
             var cell = (DynamicGridCell)element;
-            _realizedCells.AddFirst(cell.RealizedItemLink);
             int column = this.Items.IndexOf(item);
             if (column == -1) {
                 throw new InvalidOperationException("Item is not found in collection");
             }
-            cell.Prepare(OwningJointGrid.GetColumn(column));
+            cell.Prepare(ParentGrid.GetColumn(column));
+
+            _realizedCells.AddFirst(cell.RealizedItemLink);
         }
 
         protected override void ClearContainerForItemOverride(DependencyObject element, object item) {
@@ -78,44 +76,36 @@ namespace Gabang.Controls {
             cell.CleanUp();
         }
 
-        public override void OnApplyTemplate() {
-            base.OnApplyTemplate();
-
-            // row header
-            var rowHeader = (DynamicGridRowHeader)ControlHelper.GetChild(this, typeof(DynamicGridRowHeader));
-            if (rowHeader != null) {
-                rowHeader.Prepare(OwningJointGrid.RowHeaderColumn);
-            }
-        }
-
         internal void Prepare(DynamicGrid owner, object item) {
             if (!(item is IList)) {
                 throw new NotSupportedException("JointCollectionGridRow supports only IList for item");
             }
 
-            OwningJointGrid = owner;
+            ParentGrid = owner;
 
             var items = (IList)item;
             ItemsSource = items;
-
-            
         }
 
         internal void CleanUp(DynamicGrid owner, object item) {
-            var rowHeader = (DynamicGridRowHeader)ControlHelper.GetChild(this, typeof(DynamicGridRowHeader));
-            if (rowHeader != null) {
-                rowHeader.CleanUp();
-
-                foreach (var cell in _realizedCells) {
-                    cell.CleanUp();
-                }
-                _realizedCells.Clear();
-            }
+            // when VirtualizationMode == Recycling, next lines must not be called as system calls them
+            //foreach (var cell in _realizedCells) {
+            //    cell.CleanUp();
+            //}
+            //_realizedCells.Clear();
         }
 
         internal void ScrollChanged() {
             if (SharedScrollChanged != null) {
                 SharedScrollChanged(this, EventArgs.Empty);
+            }
+        }
+
+        internal DynamicGridRowHeader RowHeader { get; set; }
+
+        internal void NotifyRowHeader() {
+            if (RowHeader != null) {
+                RowHeader.InvalidateMeasure();
             }
         }
     }
