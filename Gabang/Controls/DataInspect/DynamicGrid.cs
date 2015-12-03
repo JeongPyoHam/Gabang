@@ -91,6 +91,22 @@ namespace Gabang.Controls {
 
         #endregion
 
+        #region ColumnHeader
+
+        private DynamicGridColumnHeadersPresenter _columnHeadersPresenter;
+
+        internal DynamicGridColumnHeadersPresenter ColumnHeadersPresenter {
+            get {
+                return _columnHeadersPresenter;
+            }
+            set {
+                _columnHeadersPresenter = value;
+                _columnHeadersPresenter.ItemsSource = new IntegerList(0, _dataSource.ColumnCount);  // TODO: change to real source
+            }
+        }
+
+        #endregion
+
         #region Column
 
         private SortedList<int, DynamicGridStripe> _columns = new SortedList<int, DynamicGridStripe>();
@@ -248,6 +264,10 @@ namespace Gabang.Controls {
                 OnReportPanelSize(_panelSize);  // refresh viewport
 
                 HorizontalOffset = e.NewValue;
+
+                if (_columnHeadersPresenter != null) {
+                    _columnHeadersPresenter.ScrollChanged();
+                }
 
                 foreach (var row in _realizedRows) {
                     row.ScrollChanged();

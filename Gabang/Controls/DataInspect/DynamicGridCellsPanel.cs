@@ -115,8 +115,9 @@ namespace Gabang.Controls {
 
             Size desired = new Size(width, height);
 
-            Debug.Assert(finalCount >= 1);
-            CleanUpItems(startIndex, startIndex + finalCount - 1);
+            if (finalCount > 0) {
+                CleanUpItems(startIndex, startIndex + finalCount - 1);
+            }
 
             return desired;
         }
