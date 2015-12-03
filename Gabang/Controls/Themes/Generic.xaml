@@ -174,7 +174,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type local:DynamicGridColumnHeadersPresenter}">
-                    <ItemsPresenter Grid.Column="1" />
+                    <ItemsPresenter />
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -186,7 +186,7 @@
         <Setter Property="VirtualizingPanel.CacheLength" Value="1"/>
         <Setter Property="VirtualizingPanel.CacheLengthUnit" Value="Pixel"/>
         <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True"/>
-        <!--<Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />-->
+        <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
         <Setter Property="ItemsPanel">
             <Setter.Value>
                 <ItemsPanelTemplate>
@@ -201,29 +201,44 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type local:DynamicGrid}">
                     <Border SnapsToDevicePixels="True">
-                        <Grid>
+                        <Grid Grid.IsSharedSizeScope="True">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
                                 <RowDefinition Height="Auto"/>
-                                
                             </Grid.RowDefinitions>
-                            <local:DynamicGridColumnHeadersPresenter />
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="RightCorner" />
+                            </Grid.ColumnDefinitions>
+
+                            <Rectangle x:Name="LeftTopCorner" Width="{Binding RowHeaderActualWidth, RelativeSource={RelativeSource AncestorType={x:Type local:DynamicGrid}}}" />
+                            
+                            <local:DynamicGridColumnHeadersPresenter Grid.Column="1" />
+                            
                             <ScrollViewer x:Name="VG_ScrollViewer" Focusable="False"
-                                          Grid.Row="1">
+                                          Grid.Row="1" Grid.ColumnSpan="3">
                                 <ScrollViewer.Template>
                                     <ControlTemplate TargetType="{x:Type ScrollViewer}">
                                         <Grid Background="{TemplateBinding Background}">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto" SharedSizeGroup="RightCorner"/>
                                             </Grid.ColumnDefinitions>
-                                            <Grid.RowDefinitions>
+                                            <!--<Grid.RowDefinitions>
                                                 <RowDefinition Height="*"/>
                                                 <RowDefinition Height="Auto"/>
                                             </Grid.RowDefinitions>
-                                            <Rectangle x:Name="Corner" Grid.Column="1" Fill="{DynamicResource {x:Static SystemColors.ControlBrushKey}}" Grid.Row="1"/>
-                                            <ScrollContentPresenter x:Name="PART_ScrollContentPresenter" CanContentScroll="{TemplateBinding CanContentScroll}" CanHorizontallyScroll="False" CanVerticallyScroll="False" ContentTemplate="{TemplateBinding ContentTemplate}" Content="{TemplateBinding Content}" Grid.Column="0" Margin="{TemplateBinding Padding}" Grid.Row="0"/>
+                                            <Rectangle x:Name="Corner" Grid.Column="1" Fill="{DynamicResource {x:Static SystemColors.ControlBrushKey}}" Grid.Row="1"/>-->
+                                            <ScrollContentPresenter x:Name="PART_ScrollContentPresenter"
+                                                                    Grid.Column="0" Grid.Row="0"
+                                                                    CanContentScroll="{TemplateBinding CanContentScroll}"
+                                                                    CanHorizontallyScroll="False"
+                                                                    CanVerticallyScroll="False"
+                                                                    ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                                    Content="{TemplateBinding Content}"
+                                                                    Margin="{TemplateBinding Padding}"/>
                                             <ScrollBar x:Name="PART_VerticalScrollBar"
                                                    AutomationProperties.AutomationId="VerticalScrollBar"
                                                    Cursor="Arrow"
@@ -233,7 +248,7 @@
                                                    Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
                                                    Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
                                                    ViewportSize="{TemplateBinding ViewportHeight}"/>
-                                            <ScrollBar x:Name="PART_HorizontalScrollBar"
+                                            <!--<ScrollBar x:Name="PART_HorizontalScrollBar"
                                                    AutomationProperties.AutomationId="HorizontalScrollBar"
                                                    Cursor="Arrow"
                                                    Grid.Row="1" Grid.Column="0"
@@ -242,18 +257,20 @@
                                                    Orientation="Horizontal"
                                                    Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}"
                                                    Value="{Binding HorizontalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
-                                                   ViewportSize="{TemplateBinding ViewportWidth}"/>
+                                                   ViewportSize="{TemplateBinding ViewportWidth}"/>-->
                                         </Grid>
                                     </ControlTemplate>
                                 </ScrollViewer.Template>
                                 <ItemsPresenter />
                             </ScrollViewer>
-                            <ScrollBar x:Name="HorizontalScrollBar" Grid.Row="2"
+                            <ScrollBar x:Name="HorizontalScrollBar"
+                                       Grid.Row="2" Grid.Column="1"
                                        Orientation="Horizontal" Visibility="Visible"
                                        Minimum="0"
                                        Maximum="{Binding ScrollableWidth, RelativeSource={RelativeSource AncestorType={x:Type local:DynamicGrid}}}"
                                        Value="{Binding HorizontalOffset, RelativeSource={RelativeSource AncestorType={x:Type local:DynamicGrid}}}"
                                        ViewportSize="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType={x:Type local:DynamicGrid}}}" />
+                            
                         </Grid>
                     </Border>
                 </ControlTemplate>

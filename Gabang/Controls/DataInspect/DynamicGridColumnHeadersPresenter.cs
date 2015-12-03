@@ -49,6 +49,13 @@ namespace Gabang.Controls {
             }
         }
 
+        protected override Size MeasureOverride(Size constraint) {
+            var desired = base.MeasureOverride(constraint);
+
+            return desired;
+            //return new Size(desired.Width, 10);
+        }
+
         #region SharedScrollInfo
 
         public event EventHandler SharedScrollChanged;

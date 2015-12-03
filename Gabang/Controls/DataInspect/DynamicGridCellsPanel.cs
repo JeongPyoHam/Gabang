@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace Gabang.Controls {
 
@@ -53,7 +54,11 @@ namespace Gabang.Controls {
         }
 
         private void SharedScrollChanged(object sender, EventArgs e) {
-            InvalidateMeasure();
+            Dispatcher.BeginInvoke(
+                DispatcherPriority.Render,
+                new Action(() => {
+                    InvalidateMeasure();
+                }));
         }
 
         protected override Size MeasureOverride(Size availableSize) {

@@ -148,16 +148,6 @@ namespace Gabang.Controls {
         internal void OnReportPanelSize(Size size) {
             _panelSize = size;
 
-#if PIXELBASED
-            double horizontalOffset = HorizontalOffset;
-            int itemIndex = (int)Math.Floor(horizontalOffset / EstimatedWidth);
-
-            _layoutInfo = new LayoutInfo() {
-                FirstItemIndex = itemIndex,
-                FirstItemOffset = horizontalOffset - (itemIndex * EstimatedWidth),
-                ItemCountInViewport = (int)Math.Ceiling(size.Width / EstimatedWidth),
-            };
-#else
             int horizontalOffset = (int)HorizontalOffset;
 
             double viewportWidth = Math.Ceiling(size.Width / EstimatedWidth);
@@ -165,17 +155,25 @@ namespace Gabang.Controls {
             ViewportWidth = viewportWidth;
             ScrollableWidth = ExtentWidth - viewportWidth;
 
-            _layoutInfo = new LayoutInfo() {
+            var newLayoutInfo = new LayoutInfo() {
                 FirstItemIndex = horizontalOffset,
                 FirstItemOffset = 0.0,
                 ItemCountInViewport = (int)viewportWidth,
             };
 
-            var toRemove = _columns.Where(c => c.Key < _layoutInfo.FirstItemIndex || c.Key >= (_layoutInfo.FirstItemIndex + _layoutInfo.ItemCountInViewport)).ToList();
-            foreach (var item in toRemove) {
-                _columns.Remove(item.Key);
+            if (!_layoutInfo.Equals(newLayoutInfo)) {
+                _layoutInfo = newLayoutInfo;
+
+                if (_columnHeadersPresenter != null) {
+                    _columnHeadersPresenter.ScrollChanged();
+                }
+
+                // TODO: move to background(?)
+                var toRemove = _columns.Where(c => c.Key < _layoutInfo.FirstItemIndex || c.Key >= (_layoutInfo.FirstItemIndex + _layoutInfo.ItemCountInViewport)).ToList();
+                foreach (var item in toRemove) {
+                    _columns.Remove(item.Key);
+                }
             }
-#endif
         }
 
         internal LayoutInfo GetLayoutInfo(Size size) {
