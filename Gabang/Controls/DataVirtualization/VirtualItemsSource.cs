@@ -10,28 +10,46 @@ namespace Gabang.Controls {
     /// virtualizing collection that can be used as ItemsSource of ItemsControl
     /// </summary>
     /// <typeparam name="T">type of value of each item</typeparam>
-    public class VirtualItemsSource<T> : IList<T>, IList, INotifyCollectionChanged, INotifyPropertyChanged {
+    public class VirtualItemsSource<T> : IList<T>, IList, IndexedItem, INotifyCollectionChanged, INotifyPropertyChanged where T : IndexedItem {
         #region field and ctor
 
         private readonly string ReadOnlyExceptionMessage = $"{typeof(VirtualItemsSource<T>)} is read only";
         private PageManager<T> _pageManager;
+        private Func<int, T> _createDefaultItem;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="VirtualItemsSource&lt;T&gt;"/> class.
-        /// </summary>
-        /// <param name="itemsProvider">items provider</param>
-        /// <param name="pageSize">number of items in one page</param>
-        /// <param name="pageTimeout">Time out. when page is older than this time, it is virtualized.</param>
-        public VirtualItemsSource(PageManager<T> pageManager) {
+        public VirtualItemsSource(
+            int key,
+            Func<int, T> createDefaultItem,
+            PageManager<T> pageManager) {
+            if (createDefaultItem == null) {
+                throw new ArgumentNullException("createDefaultItem");
+            }
             if (pageManager == null) {
                 throw new ArgumentNullException("pageManager");
             }
+            _createDefaultItem = createDefaultItem;
             _pageManager = pageManager;
+
+            _pageManager.PageLoaded += PageManager_PageLoaded;
+        }
+
+        private void PageManager_PageLoaded(object sender, PageLoadedEventArgs e) {
+            if (CollectionChanged != null) {
+                CollectionChanged(
+                    this,
+                    new NotifyCollectionChangedEventArgs(
+                        NotifyCollectionChangedAction.Replace,
+                        new List<T>() { this[e.Start] },
+                        new List<T>() { this[e.Start] },
+                        e.Start));
+            }
         }
 
         #endregion
 
         #region public
+
+        public int Index { get; }
 
         public event NotifyCollectionChangedEventHandler CollectionChanged;
 
@@ -63,7 +81,8 @@ namespace Gabang.Controls {
             if (_pageManager.TryGetPage(index, out page, true)) {
                 return page.GetItem(index);
             }
-            return default(T);
+
+            return _createDefaultItem(index);
         }
 
         #endregion
@@ -89,10 +108,7 @@ namespace Gabang.Controls {
         }
 
         public int IndexOf(T item) {
-            var indexed = item as IndexedItem;
-            if (indexed == null)
-                return -1;
-            return indexed.Index;
+            return item.Index;
         }
 
         public bool Contains(T item) {

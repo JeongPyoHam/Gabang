@@ -174,6 +174,8 @@ namespace Gabang.Controls {
 
             var task = Task.Run(() => _itemsProvider.Acquire(start, count));
 
+            await Task.Delay(100);
+
             IList<T> data = await task;
 
             var page = new Page<T>(pageNumber, data, start);

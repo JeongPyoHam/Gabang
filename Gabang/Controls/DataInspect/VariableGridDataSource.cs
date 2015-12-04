@@ -27,15 +27,7 @@ namespace Gabang.Controls {
         }
     }
 
-    public class RowSource : VirtualItemsSource<GridItem>, IndexedItem {
-        public RowSource(int index, PageManager<GridItem> pageManager) : base(pageManager) {
-            Index = index;
-        }
-
-        public int Index { get; }
-    }
-
-    public class DynamicGridDataSource : ConstantCountList<RowSource> {
+    public class DynamicGridDataSource : ConstantCountList<VirtualItemsSource<GridItem>> {
 
         public DynamicGridDataSource(int rowCount, int columnCount) : base(rowCount) {
             if (rowCount < 0) {
@@ -53,7 +45,7 @@ namespace Gabang.Controls {
 
         public int ColumnCount { get; }
 
-        public override RowSource this[int index] {
+        public override VirtualItemsSource<GridItem> this[int index] {
             get {
                 return GetItem(index);
             }
@@ -63,17 +55,20 @@ namespace Gabang.Controls {
             }
         }
 
-        public override int IndexOf(RowSource item) {
+        public override int IndexOf(VirtualItemsSource<GridItem> item) {
             return item.Index;
         }
 
-        private RowSource GetItem(int index) {
+        private VirtualItemsSource<GridItem> GetItem(int index) {
             var pm = new PageManager<GridItem>(
                 new RowItemsProvider(index, ColumnCount),
                 64,
                 TimeSpan.FromMinutes(1.0),
                 4);
-            return new RowSource(index, pm);
+            return new VirtualItemsSource<GridItem>(
+                index,
+                (i) => new GridItem(index, i, true),
+                pm);
         }
     }
 

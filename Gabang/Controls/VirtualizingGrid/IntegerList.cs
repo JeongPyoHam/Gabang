@@ -5,10 +5,13 @@ using System.Diagnostics;
 
 namespace Gabang.Controls {
     public struct GridItem : IndexedItem {
-        public GridItem(int row, int column) {
+        public GridItem(int row, int column, bool isDefault = false) {
             Row = row;
             Column = column;
+            Default = isDefault;
         }
+
+        public bool Default { get; }
 
         public int Row { get; }
 
@@ -21,6 +24,9 @@ namespace Gabang.Controls {
         }
 
         public override string ToString() {
+            if (Default) {
+                return "-:-";
+            }
             return string.Format("{0}:{1}", Row, Column);
         }
     }
