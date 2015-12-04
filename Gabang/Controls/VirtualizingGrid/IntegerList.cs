@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Gabang.Controls {
-    public struct GridItem {
+    public struct GridItem : IndexedItem {
         public GridItem(int row, int column) {
             Row = row;
             Column = column;
@@ -13,6 +13,12 @@ namespace Gabang.Controls {
         public int Row { get; }
 
         public int Column { get; }
+
+        int IndexedItem.Index {
+            get {
+                return Column;
+            }
+        }
 
         public override string ToString() {
             return string.Format("{0}:{1}", Row, Column);

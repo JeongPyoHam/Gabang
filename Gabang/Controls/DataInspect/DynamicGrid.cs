@@ -29,7 +29,9 @@ namespace Gabang.Controls {
             base.PrepareContainerForItemOverride(element, item);
 
             DynamicGridRow row = (DynamicGridRow)element;
-            _realizedRows.AddFirst(row.Track);
+            if (!_realizedRows.Equals(row.Track.List)) {
+                _realizedRows.AddFirst(row.Track);
+            }
             row.Header = _dataSource.IndexOf(item);
             row.Prepare(this, item);
         }
@@ -263,9 +265,10 @@ namespace Gabang.Controls {
 
                 HorizontalOffset = e.NewValue;
 
-                if (_columnHeadersPresenter != null) {
-                    _columnHeadersPresenter.ScrollChanged();
-                }
+                // same calls in OnReportPanelSize
+                //if (_columnHeadersPresenter != null) {
+                //    _columnHeadersPresenter.ScrollChanged();
+                //}
 
                 foreach (var row in _realizedRows) {
                     row.ScrollChanged();

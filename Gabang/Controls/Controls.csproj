@@ -52,6 +52,11 @@
     <Compile Include="DataInspect\DynamicGridRowsPanel.cs" />
     <Compile Include="DataInspect\DynamicGridCellsPanel.cs" />
     <Compile Include="DataInspect\DynamicGridStripe.cs" />
+    <Compile Include="DataVirtualization\IItemsProvider.cs" />
+    <Compile Include="DataVirtualization\IndexedItem.cs" />
+    <Compile Include="DataVirtualization\Page.cs" />
+    <Compile Include="DataVirtualization\PageManager.cs" />
+    <Compile Include="DataVirtualization\VirtualItemsSource.cs" />
     <Compile Include="SynchronizedStackPanel.cs" />
     <Compile Include="Data\GridByList.cs" />
     <Compile Include="Data\GridByDictionary.cs" />

@@ -54,11 +54,7 @@ namespace Gabang.Controls {
         }
 
         private void SharedScrollChanged(object sender, EventArgs e) {
-            Dispatcher.BeginInvoke(
-                DispatcherPriority.Render,
-                new Action(() => {
-                    InvalidateMeasure();
-                }));
+            InvalidateMeasure();
         }
 
         protected override Size MeasureOverride(Size availableSize) {
@@ -121,7 +117,10 @@ namespace Gabang.Controls {
             Size desired = new Size(width, height);
 
             if (finalCount > 0) {
-                CleanUpItems(startIndex, startIndex + finalCount - 1);
+                Dispatcher.BeginInvoke(
+                    DispatcherPriority.Background,
+                    new Action(() => { CleanUpItems(startIndex, startIndex + finalCount - 1); }));
+                //CleanUpItems(startIndex, startIndex + finalCount - 1);
             }
 
             return desired;

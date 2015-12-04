@@ -23,10 +23,16 @@ namespace Gabang.TreeGridTest {
         public static int RowCount = 1000;
         public static int ColumnCount = 1000;
 
+        private DynamicGridDataSource _dataSource;
+
         public GridWindow() {
             InitializeComponent();
 
-            this.VGrid.ItemsSource = new DynamicGridDataSource(RowCount, ColumnCount);
+            this.VGrid.ItemsSource = _dataSource = new DynamicGridDataSource(RowCount, ColumnCount);
+        }
+
+        private void ResetCollection_Click(object sender, RoutedEventArgs e) {
+            //_dataSource.RaiseReplace();
         }
     }
 }
