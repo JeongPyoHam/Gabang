@@ -6,6 +6,13 @@ using System.Threading.Tasks;
 
 namespace Gabang.Controls {
     public struct Range {
+        public Range(int start, int count) {
+            _start = start;
+            _count = count;
+            _end = start + count;
+        }
+
+
         // [_start, _end)
         private int _start; // closed
         private int _count;
@@ -40,7 +47,16 @@ namespace Gabang.Controls {
     }
 
     public struct GridRange {
+        public GridRange(Range rows, Range columns) {
+            Rows = rows;
+            Columns = columns;
+        }
+
         public Range Rows { get; set; }
         public Range Columns { get; set; }
+
+        public bool Contains(int row, int column) {
+            return Rows.Contains(row) && Columns.Contains(column);
+        }
     }
 }

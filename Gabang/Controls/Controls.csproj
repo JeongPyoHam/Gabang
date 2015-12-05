@@ -52,6 +52,8 @@
     <Compile Include="DataInspect\DynamicGridRowsPanel.cs" />
     <Compile Include="DataInspect\DynamicGridCellsPanel.cs" />
     <Compile Include="DataInspect\DynamicGridStripe.cs" />
+    <Compile Include="DataInspect\GridItem.cs" />
+    <Compile Include="DataVirtualization\Common.cs" />
     <Compile Include="DataVirtualization\IItemsProvider.cs" />
     <Compile Include="DataVirtualization\IndexedItem.cs" />
     <Compile Include="DataVirtualization\Page.cs" />

@@ -6,35 +6,20 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Gabang.Controls {
-    public class PageLoadedEventArgs : EventArgs {
-        public PageLoadedEventArgs(int start, int count) {
-            Start = start;
-            Count = count;
-        }
-
-        public int Start { get; }
-
-        public int Count { get; }
-    }
-
-    /// <summary>
-    /// Manages pages used by <seealso cref="VirtualItemsSource{T}"/>
-    /// </summary>
-    /// <typeparam name="T">type of item in page</typeparam>
     public class PageManager<T> {
         #region synchronized by _syncObj
 
         private object _syncObj = new object();
-        private Dictionary<int, Page<T>> _pages = new Dictionary<int, Page<T>>();
-        private Queue<int> _requests = new Queue<int>();
+        private Dictionary<int, Dictionary<int, Page<T>>> _banks = new Dictionary<int, Dictionary<int, Page<T>>>();
+        private Queue<PageNumber> _requests = new Queue<PageNumber>();
         private Task _loadTask = null;
 
         #endregion
 
-        private IItemsProvider<T> _itemsProvider;
+        private IGridProvider<T> _itemsProvider;
         private SynchronizationContext _synchronizationContext;
 
-        public PageManager(IItemsProvider<T> itemsProvider, int pageSize, TimeSpan timeout, int keepPageCount) {
+        public PageManager(IGridProvider<T> itemsProvider, int pageSize, TimeSpan timeout, int keepPageCount) {
             if (itemsProvider == null) {
                 throw new ArgumentNullException("itemsProvider");
             }
@@ -46,6 +31,7 @@ namespace Gabang.Controls {
             }
 
             _itemsProvider = itemsProvider;
+
             PageSize = pageSize;
             Timeout = timeout;
             KeepPageCount = keepPageCount;
@@ -55,11 +41,9 @@ namespace Gabang.Controls {
 
         public event EventHandler<PageLoadedEventArgs> PageLoaded;
 
-        public int ItemsCount {
-            get {
-                return _itemsProvider.Count;
-            }
-        }
+        public int RowCount { get { return _itemsProvider.RowCount; } }
+
+        public int ColumnCount { get { return _itemsProvider.ColumnCount; } }
 
         public int KeepPageCount { get; }
 
@@ -67,33 +51,56 @@ namespace Gabang.Controls {
 
         public TimeSpan Timeout { get; }
 
-        public bool TryGetPage(int index, out Page<T> foundPage, bool autoRequest) {
+        public bool TryGetPage(int row, int column, out Page<T> foundPage, bool autoRequest) {
             lock (_syncObj) {
-                int pageNumber = ComputePageNumber(index);
-                bool found = _pages.TryGetValue(pageNumber, out foundPage);
-                if (!found && autoRequest) {
-                    Request(pageNumber);
+                int rowPageNumber, columnPageNumber;
+                ComputePageNumber(row, column, out rowPageNumber, out columnPageNumber);
+
+                Dictionary<int, Page<T>> bank;
+                if (_banks.TryGetValue(rowPageNumber, out bank)) {
+                    if (bank.TryGetValue(columnPageNumber, out foundPage)) {
+                        return true;
+                    }
                 }
-                return found;
+
+                if (autoRequest) {
+                    Request(rowPageNumber, columnPageNumber);
+                }
+
+                foundPage = null;
+                return false;
             }
         }
 
-        private void Request(int index) {
-            lock(_syncObj) {
-                _requests.Enqueue(index);
+        private void ComputePageNumber(int row, int column, out int rowPageNumber, out int columnPageNumber) {
+            rowPageNumber = row / PageSize;
+            columnPageNumber = column / PageSize;
+        }
+
+        private void Request(int row, int column) {
+            lock (_syncObj) {
+                _requests.Enqueue(new PageNumber(row, column));
                 EnsureLoadTask();
             }
         }
 
-        private int ComputePageNumber(int index) {
-            return index / PageSize;
+        private GridRange GetPageRange(PageNumber pageNumber) {
+            int start, count;
+
+            GetPageInfo(pageNumber.Row, RowCount, out start, out count);
+            Range row = new Range(start, count);
+
+            GetPageInfo(pageNumber.Column, ColumnCount, out start, out count);
+            Range column = new Range(start, count);
+
+            return new GridRange(row, column);
         }
 
-        private void GetPageInfo(int pageNumber, out int pageStartIndex, out int pageSize) {
+        private void GetPageInfo(int pageNumber, int itemCount, out int pageStartIndex, out int pageSize) {
             pageStartIndex = pageNumber * PageSize;
 
             int end = pageStartIndex + PageSize;
-            int count = _itemsProvider.Count;
+            int count = itemCount;
             if (end > count) {    // last page
                 pageSize = count - pageStartIndex;
             } else {
@@ -114,7 +121,7 @@ namespace Gabang.Controls {
         private async Task LoadAndCleanPagesAsync() {
             bool cleanHasRun = false;
             while (true) {
-                int pageNumber = -1;
+                PageNumber? pageNumber = null;
                 lock (_syncObj) {
                     if (_requests.Count == 0) {
                         if (cleanHasRun) {
@@ -125,12 +132,12 @@ namespace Gabang.Controls {
                         }
                     } else {
                         pageNumber = _requests.Dequeue();
-                        Debug.Assert(pageNumber != -1);
+                        Debug.Assert(pageNumber != null);
                     }
                 }
 
-                if (pageNumber != -1) {
-                    await LoadAsync(pageNumber);
+                if (pageNumber != null) {
+                    await LoadAsync(pageNumber.Value);
                 } else {
                     CleanOldPages();
                     cleanHasRun = true;
@@ -138,54 +145,58 @@ namespace Gabang.Controls {
             }
         }
 
-        private int PopRequest() {
-            lock (_syncObj) {
-                return _requests.Count == 0 ? -1 : _requests.Dequeue();
-            }
-        }
-
         private void CleanOldPages() {
-            while(_pages.Count > KeepPageCount) {
-                DateTime lastTime = DateTime.UtcNow - Timeout;
-                IEnumerable<KeyValuePair<int, Page<T>>> toRemove;
+            foreach (var bank in _banks.Values) {
+                while (bank.Count > KeepPageCount) {
+                    DateTime lastTime = DateTime.UtcNow - Timeout;
+                    IEnumerable<KeyValuePair<int, Page<T>>> toRemove;
 
-                lock (_syncObj) {
-                    toRemove = _pages.Where(kv => (kv.Value.LastAccessTime < lastTime)).ToList();
-                }
-
-                foreach (var item in toRemove) {
                     lock (_syncObj) {
-                        _pages.Remove(item.Key);
+                        toRemove = bank.Where(kv => (kv.Value.LastAccessTime < lastTime)).ToList();
                     }
-                    _itemsProvider.Release(item.Value.StartIndex, item.Value.Count);
+
+                    foreach (var item in toRemove) {
+                        lock (_syncObj) {
+                            bank.Remove(item.Key);
+                        }
+                        // TODO: release hint
+                    }
                 }
             }
         }
 
-        private async Task LoadAsync(int pageNumber) {
-            lock (_syncObj) {
-                if (_pages.ContainsKey(pageNumber)) {
+        private async Task LoadAsync(PageNumber pageNumber) {
+            Dictionary<int, Page<T>> bank;
+            if (_banks.TryGetValue(pageNumber.Row, out bank)) {
+                if (bank.ContainsKey(pageNumber.Column)) {
                     return;
                 }
             }
 
-            int start, count;
-            GetPageInfo(pageNumber, out start, out count);
+            GridRange range = GetPageRange(pageNumber);
 
-            var task = Task.Run(() => _itemsProvider.Acquire(start, count));
+            var task = Task.Run(() => _itemsProvider.GetRangeAsync(range));
 
-            await Task.Delay(100);
+            IGrid<T> data = await task;
 
-            IList<T> data = await task;
-
-            var page = new Page<T>(pageNumber, data, start);
+            Page<T> page = new Page<T>(
+                pageNumber,
+                data,
+                range.Rows.Start,
+                range.Columns.Start);
 
             lock (_syncObj) {
-                _pages.Add(pageNumber, page);
+                if (_banks.ContainsKey(pageNumber.Row)) {
+                    _banks[pageNumber.Row][pageNumber.Column] = page;
+                } else {
+                    bank = new Dictionary<int, Page<T>>();
+                    bank[pageNumber.Column] = page;
+                    _banks[pageNumber.Row] = bank;
+                }
             }
 
             if (PageLoaded != null) {
-                var args = new PageLoadedEventArgs(page.StartIndex, page.Count);
+                var args = new PageLoadedEventArgs(range);
                 _synchronizationContext.Post(
                     PageLoadedSynchronizationContextCallback,
                     args);
@@ -199,5 +210,27 @@ namespace Gabang.Controls {
                     (PageLoadedEventArgs)state);
             }
         }
+    }
+
+    public class PageLoadedEventArgs : EventArgs {
+        public PageLoadedEventArgs(GridRange range) {
+            Range = range;
+        }
+
+        public GridRange Range { get; }
+    }
+
+    /// <summary>
+    /// <see cref="IGrid{T}"/> provider
+    /// </summary>
+    /// <typeparam name="T">the type of grid item</typeparam>
+    public interface IGridProvider<T> {
+        int RowCount { get; }
+
+        int ColumnCount { get; }
+
+        Task<IGrid<T>> GetRangeAsync(GridRange gridRange);
+
+        Task<List<T>> GetHeaderAsync(Range range, bool isRow);
     }
 }
