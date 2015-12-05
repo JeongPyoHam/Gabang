@@ -32,7 +32,7 @@ namespace Gabang.Controls {
             if (!_realizedRows.Equals(row.Track.List)) {
                 _realizedRows.AddFirst(row.Track);
             }
-            row.Header = _dataSource.IndexOf(item);
+            row.Header = ((IList)_dataSource).IndexOf(item);
             row.Prepare(this, item);
         }
 

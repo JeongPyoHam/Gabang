@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using System.Windows.Media;
 using System.Windows.Threading;
 
 namespace Gabang.Controls {
@@ -117,10 +112,10 @@ namespace Gabang.Controls {
             Size desired = new Size(width, height);
 
             if (finalCount > 0) {
+                // TODO: the index might be invalid at the time when CleanUpItems runs
                 Dispatcher.BeginInvoke(
                     DispatcherPriority.Background,
                     new Action(() => { CleanUpItems(startIndex, startIndex + finalCount - 1); }));
-                //CleanUpItems(startIndex, startIndex + finalCount - 1);
             }
 
             return desired;

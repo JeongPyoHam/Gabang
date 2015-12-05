@@ -1,27 +1,24 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 
 namespace Gabang.Controls {
     /// <summary>
-    /// virtualizing collection that can be used as ItemsSource of ItemsControl
+    /// delegate of getting item, but provides IList support for binding
     /// </summary>
-    /// <typeparam name="T">type of value of each item</typeparam>
-    public class VirtualItemsSource<T> : IList<T>, IList, IndexedItem where T : IndexedItem {
+    /// <typeparam name="T">type of item value</typeparam>
+    public class DelegateList<T> : IList<T>, IList, IndexedItem where T : IndexedItem {
         #region field and ctor
 
-        private readonly string ReadOnlyExceptionMessage = $"{typeof(VirtualItemsSource<T>)} is read only";
+        private readonly string ReadOnlyExceptionMessage = $"{typeof(DelegateList<T>)} is read only";
         private Func<int, T> _getItem;
 
-        public VirtualItemsSource(
+        public DelegateList(
             int index,
             Func<int, T> GetItem,
             int count) {
             if (GetItem == null) {
-                throw new ArgumentNullException("createDefaultItem");
+                throw new ArgumentNullException("GetItem");
             }
 
             Index = index;

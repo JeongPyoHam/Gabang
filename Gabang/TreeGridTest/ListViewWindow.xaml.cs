@@ -21,7 +21,7 @@ namespace Gabang.TreeGridTest {
         public ListViewWindow() {
             InitializeComponent();
 
-            RootListView.ItemsSource = new DynamicGridDataSource(100, 100);
+            //RootListView.ItemsSource = new DynamicGridDataSource(100, 100);
         }
     }
 }

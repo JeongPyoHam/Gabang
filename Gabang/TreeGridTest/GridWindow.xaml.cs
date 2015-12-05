@@ -25,10 +25,18 @@ namespace Gabang.TreeGridTest {
 
         private DynamicGridDataSource _dataSource;
 
+        private PageManager<GridItem> _pageManager;
+
         public GridWindow() {
             InitializeComponent();
 
-            this.VGrid.ItemsSource = _dataSource = new DynamicGridDataSource(RowCount, ColumnCount);
+            _pageManager = new PageManager<GridItem>(
+                new ItemsProvider(RowCount, ColumnCount),
+                64,
+                TimeSpan.FromMinutes(1.0),
+                4);
+
+            this.VGrid.ItemsSource = _dataSource = new DynamicGridDataSource(_pageManager);
         }
 
         private void ResetCollection_Click(object sender, RoutedEventArgs e) {

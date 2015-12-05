@@ -58,7 +58,8 @@
     <Compile Include="DataVirtualization\IndexedItem.cs" />
     <Compile Include="DataVirtualization\Page.cs" />
     <Compile Include="DataVirtualization\PageManager.cs" />
-    <Compile Include="DataVirtualization\VirtualItemsSource.cs" />
+    <Compile Include="DataVirtualization\PageNumber.cs" />
+    <Compile Include="DataVirtualization\DelegateList.cs" />
     <Compile Include="SynchronizedStackPanel.cs" />
     <Compile Include="Data\GridByList.cs" />
     <Compile Include="Data\GridByDictionary.cs" />
@@ -76,7 +77,7 @@
     <Compile Include="VirtualizingGrid\IntegerList.cs" />
     <Compile Include="DataInspect\MaxDouble.cs" />
     <Compile Include="VirtualizingGrid\Range.cs" />
-    <Compile Include="DataInspect\VariableGridDataSource.cs" />
+    <Compile Include="DataInspect\DynamicGridDataSource.cs" />
     <Compile Include="DataInspect\DynamicGrid.cs" />
     <Compile Include="VirtualizingGrid\VariableGridCell.cs" />
     <Compile Include="VirtualizingGrid\VariableGridColumn.cs" />
