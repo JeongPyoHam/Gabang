@@ -5,11 +5,11 @@ using System.Collections.Specialized;
 using System.Threading.Tasks;
 
 namespace Gabang.Controls {
-    public class DynamicGridDataSource : DelegateList<DelegateList<GridItem>> {
+    public class DynamicGridDataSource : DelegateList<DelegateList<PageItem<GridItem>>> {
 
-        PageManager<GridItem> _pageManager;
+        Page2DManager<GridItem> _pageManager;
 
-        public DynamicGridDataSource(PageManager<GridItem> pageManager)
+        public DynamicGridDataSource(Page2DManager<GridItem> pageManager)
             : base(0,
                   (i) => GetItem(pageManager, i, pageManager.ColumnCount),
                   pageManager.RowCount) {
@@ -24,20 +24,15 @@ namespace Gabang.Controls {
             get { return _pageManager.ColumnCount; }
         }
 
-        private static DelegateList<GridItem> GetItem(PageManager<GridItem> pm, int index, int itemCount) {
-            return new DelegateList<GridItem>(
+        private static DelegateList<PageItem<GridItem>> GetItem(Page2DManager<GridItem> pm, int index, int itemCount) {
+            return new DelegateList<PageItem<GridItem>>(
                 index,
                 (i) => GetGridItemFromPageManager(pm, index, i),
                 itemCount);
         }
 
-        private static GridItem GetGridItemFromPageManager(PageManager<GridItem> pm, int key, int index) {
-            Page<GridItem> page;
-            if (pm.TryGetPage(key, index, out page, true)) {
-                return page.GetItem(key, index);
-            }
-
-            return new GridItem(key, index, true);
+        private static PageItem<GridItem> GetGridItemFromPageManager(Page2DManager<GridItem> pm, int key, int index) {
+            return pm.GetItem(key, index);
         }
     }
 }

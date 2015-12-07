@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -6,12 +7,13 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Gabang.Controls {
-    public class PageManager<T> {
+
+    public class Page2DManager<T> {
         #region synchronized by _syncObj
 
         private object _syncObj = new object();
-        private Dictionary<int, Dictionary<int, Page<T>>> _banks = new Dictionary<int, Dictionary<int, Page<T>>>();
-        private Queue<PageNumber> _requests = new Queue<PageNumber>();
+        private Dictionary<int, Dictionary<int, Page2D<T>>> _banks = new Dictionary<int, Dictionary<int, Page2D<T>>>();
+        private Queue<Page2D<T>> _requests = new Queue<Page2D<T>>();
         private Task _loadTask = null;
 
         #endregion
@@ -19,7 +21,7 @@ namespace Gabang.Controls {
         private IGridProvider<T> _itemsProvider;
         private SynchronizationContext _synchronizationContext;
 
-        public PageManager(IGridProvider<T> itemsProvider, int pageSize, TimeSpan timeout, int keepPageCount) {
+        public Page2DManager(IGridProvider<T> itemsProvider, int pageSize, TimeSpan timeout, int keepPageCount) {
             if (itemsProvider == null) {
                 throw new ArgumentNullException("itemsProvider");
             }
@@ -51,37 +53,54 @@ namespace Gabang.Controls {
 
         public TimeSpan Timeout { get; }
 
-        public bool TryGetPage(int row, int column, out Page<T> foundPage, bool autoRequest) {
+        public PageItem<T> GetItem(int row, int column) {
             lock (_syncObj) {
                 int rowPageNumber, columnPageNumber;
                 ComputePageNumber(row, column, out rowPageNumber, out columnPageNumber);
 
-                Dictionary<int, Page<T>> bank;
+                Dictionary<int, Page2D<T>> bank;
+                Page2D<T> foundPage;
                 if (_banks.TryGetValue(rowPageNumber, out bank)) {
-                    if (bank.TryGetValue(columnPageNumber, out foundPage)) {
-                        return true;
+                    if (!bank.TryGetValue(columnPageNumber, out foundPage)) {
+                        foundPage = CreateEmptyPage(new PageNumber(rowPageNumber, columnPageNumber));
+                        bank.Add(columnPageNumber, foundPage);
                     }
+
+                } else {
+                    bank = new Dictionary<int, Page2D<T>>();
+                    foundPage = CreateEmptyPage(new PageNumber(rowPageNumber, columnPageNumber));
+                    bank.Add(columnPageNumber, foundPage);
+                    _banks.Add(rowPageNumber, bank);
                 }
 
-                if (autoRequest) {
-                    Request(rowPageNumber, columnPageNumber);
-                }
-
-                foundPage = null;
-                return false;
+                return foundPage.GetItem(row, column);
             }
+        }
+
+        private Page2D<T> CreateEmptyPage(PageNumber pageNumber) {
+            int rowStart, rowCount;
+            GetPageInfo(pageNumber.Row, RowCount, out rowStart, out rowCount);
+
+            int columnStart, columnCount;
+            GetPageInfo(pageNumber.Column, ColumnCount, out columnStart, out columnCount);
+
+            var range = new GridRange(
+                    new Range(rowStart, rowCount),          // row
+                    new Range(columnStart, columnCount));   // column
+
+            var page = new Page2D<T>(pageNumber, range);
+
+            lock (_syncObj) {
+                _requests.Enqueue(page);
+                EnsureLoadTask();
+            }
+
+            return page;
         }
 
         private void ComputePageNumber(int row, int column, out int rowPageNumber, out int columnPageNumber) {
             rowPageNumber = row / PageSize;
             columnPageNumber = column / PageSize;
-        }
-
-        private void Request(int row, int column) {
-            lock (_syncObj) {
-                _requests.Enqueue(new PageNumber(row, column));
-                EnsureLoadTask();
-            }
         }
 
         private GridRange GetPageRange(PageNumber pageNumber) {
@@ -121,7 +140,7 @@ namespace Gabang.Controls {
         private async Task LoadAndCleanPagesAsync() {
             bool cleanHasRun = false;
             while (true) {
-                PageNumber? pageNumber = null;
+                Page2D<T> page = null;
                 lock (_syncObj) {
                     if (_requests.Count == 0) {
                         if (cleanHasRun) {
@@ -131,13 +150,13 @@ namespace Gabang.Controls {
 
                         }
                     } else {
-                        pageNumber = _requests.Dequeue();
-                        Debug.Assert(pageNumber != null);
+                        page = _requests.Dequeue();
+                        Debug.Assert(page != null);
                     }
                 }
 
-                if (pageNumber != null) {
-                    await LoadAsync(pageNumber.Value);
+                if (page != null) {
+                    await LoadAsync(page);
                 } else {
                     CleanOldPages();
                     cleanHasRun = true;
@@ -149,7 +168,7 @@ namespace Gabang.Controls {
             foreach (var bank in _banks.Values) {
                 while (bank.Count > KeepPageCount) {
                     DateTime lastTime = DateTime.UtcNow - Timeout;
-                    IEnumerable<KeyValuePair<int, Page<T>>> toRemove;
+                    IEnumerable<KeyValuePair<int, Page2D<T>>> toRemove;
 
                     lock (_syncObj) {
                         toRemove = bank.Where(kv => (kv.Value.LastAccessTime < lastTime)).ToList();
@@ -165,50 +184,12 @@ namespace Gabang.Controls {
             }
         }
 
-        private async Task LoadAsync(PageNumber pageNumber) {
-            Dictionary<int, Page<T>> bank;
-            if (_banks.TryGetValue(pageNumber.Row, out bank)) {
-                if (bank.ContainsKey(pageNumber.Column)) {
-                    return;
-                }
-            }
-
-            GridRange range = GetPageRange(pageNumber);
-
-            var task = Task.Run(() => _itemsProvider.GetRangeAsync(range));
+        private async Task LoadAsync(Page2D<T> page) {
+            var task = Task.Run(() => _itemsProvider.GetRangeAsync(page.Range));
 
             IGrid<T> data = await task;
 
-            Page<T> page = new Page<T>(
-                pageNumber,
-                data,
-                range.Rows.Start,
-                range.Columns.Start);
-
-            lock (_syncObj) {
-                if (_banks.ContainsKey(pageNumber.Row)) {
-                    _banks[pageNumber.Row][pageNumber.Column] = page;
-                } else {
-                    bank = new Dictionary<int, Page<T>>();
-                    bank[pageNumber.Column] = page;
-                    _banks[pageNumber.Row] = bank;
-                }
-            }
-
-            if (PageLoaded != null) {
-                var args = new PageLoadedEventArgs(range);
-                _synchronizationContext.Post(
-                    PageLoadedSynchronizationContextCallback,
-                    args);
-            }
-        }
-
-        private void PageLoadedSynchronizationContextCallback(object state) {
-            if (PageLoaded != null) {
-                PageLoaded(
-                    this,
-                    (PageLoadedEventArgs)state);
-            }
+            page.PopulateData(data);
         }
     }
 
@@ -223,14 +204,18 @@ namespace Gabang.Controls {
     /// <summary>
     /// <see cref="IGrid{T}"/> provider
     /// </summary>
-    /// <typeparam name="T">the type of grid item</typeparam>
-    public interface IGridProvider<T> {
+    /// <typeparam name="TData">the type of grid item</typeparam>
+    public interface IGridProvider<TData> {
         int RowCount { get; }
 
         int ColumnCount { get; }
 
-        Task<IGrid<T>> GetRangeAsync(GridRange gridRange);
+        Task<IGrid<TData>> GetRangeAsync(GridRange gridRange);
+    }
 
-        Task<List<T>> GetHeaderAsync(Range range, bool isRow);
+    public interface IHeaderProvider {
+        int Count { get; }
+
+        Task<IList> GetHeaders(Range range);
     }
 }

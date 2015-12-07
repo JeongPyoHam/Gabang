@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -34,6 +35,33 @@ namespace Gabang.Controls {
         }
     }
 
+    public class HeaderProvider : IHeaderProvider {
+        private bool _isRow;
+
+        private const string RowFormat = "[{0},]";
+        private const string ColumnFormat = "[,{0}]";
+
+        public HeaderProvider(int count, bool isRow) {
+            Count = count;
+            _isRow = isRow;
+        }
+
+        public int Count { get; }
+
+        public async Task<IList> GetHeaders(Range range) {
+            await Task.Delay(1);
+
+            List<string> list = new List<string>();
+
+            string format = _isRow ? RowFormat : ColumnFormat;
+            for (int i = 0; i < range.Count; i++) {
+                list.Add(string.Format(format, range.Start + i));
+            }
+
+            return list;
+        }
+    }
+
     public class ItemsProvider : IGridProvider<GridItem> {
         public ItemsProvider(int rowCount, int columnCount) {
             RowCount = rowCount;
@@ -44,12 +72,10 @@ namespace Gabang.Controls {
 
         public int RowCount { get; }
 
-        public Task<List<GridItem>> GetHeaderAsync(Range range, bool isRow) {
-            throw new NotImplementedException();
-        }
-
         public Task<IGrid<GridItem>> GetRangeAsync(GridRange gridRange) {
-            return Task.Run(() => {
+            return Task.Run(async () => {
+                await Task.Delay(1000);
+
                 List<GridItem> data = new List<GridItem>(gridRange.Rows.Count * gridRange.Columns.Count);
                 for (int c = 0; c < gridRange.Columns.Count; c++) {
                     for (int r = 0; r < gridRange.Rows.Count; r++) {
@@ -59,6 +85,7 @@ namespace Gabang.Controls {
                                 c + gridRange.Columns.Start));
                     }
                 }
+
                 var grid = new Grid<GridItem>(gridRange.Rows.Count, gridRange.Columns.Count, data);
                 return (IGrid<GridItem>)grid;
             });

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Gabang.Controls {
     /// <summary>
-    /// delegate of getting item, but provides IList support for binding
+    /// delegate of getting item and implements IList
     /// </summary>
     /// <typeparam name="T">type of item value</typeparam>
     public class DelegateList<T> : IList<T>, IList, IndexedItem where T : IndexedItem {

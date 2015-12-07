@@ -25,12 +25,18 @@ namespace Gabang.TreeGridTest {
 
         private DynamicGridDataSource _dataSource;
 
-        private PageManager<GridItem> _pageManager;
+        private HeaderProvider _rowHeaderSource;
+        private HeaderProvider _columnHeaderSource;
+
+        private Page2DManager<GridItem> _pageManager;
 
         public GridWindow() {
             InitializeComponent();
 
-            _pageManager = new PageManager<GridItem>(
+            _rowHeaderSource = new HeaderProvider(RowCount, true);
+            _columnHeaderSource = new HeaderProvider(ColumnCount, false);
+
+            _pageManager = new Page2DManager<GridItem>(
                 new ItemsProvider(RowCount, ColumnCount),
                 64,
                 TimeSpan.FromMinutes(1.0),
