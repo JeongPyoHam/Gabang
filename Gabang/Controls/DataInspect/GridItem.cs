@@ -35,7 +35,7 @@ namespace Gabang.Controls {
         }
     }
 
-    public class HeaderProvider : IHeaderProvider {
+    public class HeaderProvider : IListProvider<string> {
         private bool _isRow;
 
         private const string RowFormat = "[{0},]";
@@ -48,7 +48,7 @@ namespace Gabang.Controls {
 
         public int Count { get; }
 
-        public async Task<IList> GetHeaders(Range range) {
+        public async Task<IList<string>> GetRangeAsync(Range range) {
             await Task.Delay(1);
 
             List<string> list = new List<string>();

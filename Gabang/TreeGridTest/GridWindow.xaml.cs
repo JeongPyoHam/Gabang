@@ -25,16 +25,24 @@ namespace Gabang.TreeGridTest {
 
         private DynamicGridDataSource _dataSource;
 
-        private HeaderProvider _rowHeaderSource;
-        private HeaderProvider _columnHeaderSource;
-
         private Page2DManager<GridItem> _pageManager;
+        private PageManager<string> _rowPageManager;
+        private PageManager<string> _columnPageManager;
 
         public GridWindow() {
             InitializeComponent();
 
-            _rowHeaderSource = new HeaderProvider(RowCount, true);
-            _columnHeaderSource = new HeaderProvider(ColumnCount, false);
+            _rowPageManager = new PageManager<string>(
+                new HeaderProvider(RowCount, true),
+                64,
+                TimeSpan.FromMinutes(1.0),
+                4);
+
+            _columnPageManager = new PageManager<string>(
+                new HeaderProvider(ColumnCount, true),
+                64,
+                TimeSpan.FromMinutes(1.0),
+                4);
 
             _pageManager = new Page2DManager<GridItem>(
                 new ItemsProvider(RowCount, ColumnCount),
@@ -43,6 +51,9 @@ namespace Gabang.TreeGridTest {
                 4);
 
             this.VGrid.ItemsSource = _dataSource = new DynamicGridDataSource(_pageManager);
+
+            this.VGrid.RowHeaderSource = new DelegateList<PageItem<string>>(0, (i) => _rowPageManager.GetItem(i), _rowPageManager.Count);
+            this.VGrid.ColumnHeaderSource = new DelegateList<PageItem<string>>(0, (i) => _columnPageManager.GetItem(i), _columnPageManager.Count);
         }
 
         private void ResetCollection_Click(object sender, RoutedEventArgs e) {

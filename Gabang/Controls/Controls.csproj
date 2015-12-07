@@ -56,9 +56,11 @@
     <Compile Include="DataVirtualization\Common.cs" />
     <Compile Include="DataVirtualization\IItemsProvider.cs" />
     <Compile Include="DataVirtualization\IndexedItem.cs" />
+    <Compile Include="DataVirtualization\Page.cs" />
     <Compile Include="DataVirtualization\Page2D.cs" />
     <Compile Include="DataVirtualization\PageItem.cs" />
     <Compile Include="DataVirtualization\Page2DManager.cs" />
+    <Compile Include="DataVirtualization\PageManager.cs" />
     <Compile Include="DataVirtualization\PageNumber.cs" />
     <Compile Include="DataVirtualization\DelegateList.cs" />
     <Compile Include="DataInspect\DynamicGridCellData.cs" />

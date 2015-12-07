@@ -19,7 +19,6 @@ namespace Gabang.Controls {
         #endregion
 
         private IGridProvider<T> _itemsProvider;
-        private SynchronizationContext _synchronizationContext;
 
         public Page2DManager(IGridProvider<T> itemsProvider, int pageSize, TimeSpan timeout, int keepPageCount) {
             if (itemsProvider == null) {
@@ -37,11 +36,7 @@ namespace Gabang.Controls {
             PageSize = pageSize;
             Timeout = timeout;
             KeepPageCount = keepPageCount;
-
-            _synchronizationContext = SynchronizationContext.Current;
         }
-
-        public event EventHandler<PageLoadedEventArgs> PageLoaded;
 
         public int RowCount { get { return _itemsProvider.RowCount; } }
 
@@ -193,14 +188,6 @@ namespace Gabang.Controls {
         }
     }
 
-    public class PageLoadedEventArgs : EventArgs {
-        public PageLoadedEventArgs(GridRange range) {
-            Range = range;
-        }
-
-        public GridRange Range { get; }
-    }
-
     /// <summary>
     /// <see cref="IGrid{T}"/> provider
     /// </summary>
@@ -213,9 +200,9 @@ namespace Gabang.Controls {
         Task<IGrid<TData>> GetRangeAsync(GridRange gridRange);
     }
 
-    public interface IHeaderProvider {
+    public interface IListProvider<TData> {
         int Count { get; }
 
-        Task<IList> GetHeaders(Range range);
+        Task<IList<TData>> GetRangeAsync(Range range);
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -26,8 +27,10 @@ namespace Gabang.Controls {
             DynamicGridRow row = (DynamicGridRow)element;
             if (!_realizedRows.Equals(row.Track.List)) {
                 _realizedRows.AddFirst(row.Track);
+            } else {
+                Debug.Fail("hey");
             }
-            row.Header = ((IList)_dataSource).IndexOf(item);
+            row.Header = RowHeaderSource[((IList)_dataSource).IndexOf(item)];
             row.Prepare(this, item);
         }
 
@@ -98,7 +101,7 @@ namespace Gabang.Controls {
             }
             set {
                 _columnHeadersPresenter = value;
-                _columnHeadersPresenter.ItemsSource = new IntegerList(0, _dataSource.ColumnCount);  // TODO: change to real source
+                _columnHeadersPresenter.ItemsSource = ColumnHeaderSource;
             }
         }
 
