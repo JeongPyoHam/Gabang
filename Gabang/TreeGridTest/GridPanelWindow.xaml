@@ -12,18 +12,8 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <Grid Grid.Row="0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1*" />
-                <ColumnDefinition Width="1*" />
-            </Grid.ColumnDefinitions>
-            <Border Background="Blue">
-                
-            <control:GridPanel2 x:Name="RootGrid"/>
-            </Border>
-            <Rectangle Fill="Red" Grid.Column="1" />
-        </Grid>
-        
+
+        <control:GridPanel2 x:Name="RootGrid"/>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal">
             <Button x:Name="Add" Click="Add_Click">Add</Button>
