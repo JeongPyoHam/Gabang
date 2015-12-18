@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 
-namespace Microsoft.VisualStudio.R.TestApp {
+namespace Gabang.Controls {
 
     public class GridTextBox : TextBlock {
         public int Row { get; set; }
@@ -20,7 +20,7 @@ namespace Microsoft.VisualStudio.R.TestApp {
         private double[] _yPositions;
         private double[] _width;
         private double[] _height;
-        private Package.DataInspect.Grid<GridTextBox> _grid;
+        private Grid<GridTextBox> _grid;
 
         public GridPanel() {
             MinWidth = 20.0;
@@ -37,7 +37,7 @@ namespace Microsoft.VisualStudio.R.TestApp {
 
             InternalChildren.Clear();
 
-            _grid = new Package.DataInspect.Grid<GridTextBox>(
+            _grid = new Grid<GridTextBox>(
                 RowCount,
                 RowCount,
                 (r, c) => new GridTextBox() { Row = r, Column = c, Text = string.Format("{0}:{1}", r, c) });
@@ -65,7 +65,7 @@ namespace Microsoft.VisualStudio.R.TestApp {
         }
 
         static int touchCount = 0;
-        public void TouchChildren() {
+        public void RefreshChildren() {
             var watch = Stopwatch.StartNew();
 
             foreach (GridTextBox child in InternalChildren) {

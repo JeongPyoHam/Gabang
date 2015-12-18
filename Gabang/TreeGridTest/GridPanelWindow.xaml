@@ -1,0 +1,33 @@
+﻿<Window x:Class="Gabang.TreeGridTest.GridPanelWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Gabang.TreeGridTest"
+        xmlns:control="clr-namespace:Gabang.Controls;assembly=Gabang.Controls"
+        mc:Ignorable="d"
+        Title="GridPanelWindow" Height="300" Width="300">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+            <Border Background="Blue">
+                
+            <control:GridPanel2 x:Name="RootGrid"/>
+            </Border>
+            <Rectangle Fill="Red" Grid.Column="1" />
+        </Grid>
+        
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal">
+            <Button x:Name="Add" Click="Add_Click">Add</Button>
+            <Button x:Name="Refresh" Click="Refresh_Click">Refresh</Button>
+        </StackPanel>
+    </Grid>
+</Window>

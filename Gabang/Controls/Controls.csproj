@@ -65,6 +65,7 @@
     <Compile Include="DataVirtualization\DelegateList.cs" />
     <Compile Include="DataInspect\DynamicGridCellData.cs" />
     <Compile Include="GridPanel\GridPanel.cs" />
+    <Compile Include="GridPanel\GridPanel2.cs" />
     <Compile Include="SynchronizedStackPanel.cs" />
     <Compile Include="Data\GridByList.cs" />
     <Compile Include="Data\GridByDictionary.cs" />

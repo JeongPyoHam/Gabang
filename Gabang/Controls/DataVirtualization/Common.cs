@@ -39,14 +39,15 @@ namespace Gabang.Controls {
 
         private IList<T> _list;
 
-        public Grid(int rowCount, int columnCount, bool fillDefault) {
+        public Grid(int rowCount, int columnCount, Func<int, int, T> createNew) {
             RowCount = rowCount;
             ColumnCount = columnCount;
 
             _list = new List<T>(RowCount * ColumnCount);
-            if (fillDefault) {
-                for (int i = 0; i < RowCount * ColumnCount; i++) {
-                    _list.Add(default(T));
+
+            for (int c = 0; c < columnCount; c++) {
+                for (int r = 0; r < rowCount; r++) {
+                    _list.Add(createNew(r, c));
                 }
             }
         }
