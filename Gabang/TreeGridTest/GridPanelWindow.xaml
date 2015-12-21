@@ -18,6 +18,7 @@
         <StackPanel Grid.Row="1" Orientation="Horizontal">
             <Button x:Name="Add" Click="Add_Click">Add</Button>
             <Button x:Name="Refresh" Click="Refresh_Click">Refresh</Button>
+            <TextBox x:Name="HorizontalOffsetBox" TextChanged="HorizontalOffsetBox_TextChanged" MinWidth="20" />
         </StackPanel>
     </Grid>
 </Window>

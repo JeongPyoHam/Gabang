@@ -51,5 +51,14 @@ namespace Gabang.TreeGridTest {
 
             RootGrid.LayoutUpdated += RootGrid_LayoutUpdated;
         }
+
+        private void HorizontalOffsetBox_TextChanged(object sender, TextChangedEventArgs e) {
+            if (string.IsNullOrWhiteSpace(HorizontalOffsetBox.Text)) return;
+
+            double horizontalOffset;
+            if (double.TryParse(HorizontalOffsetBox.Text, out horizontalOffset)) {
+                RootGrid.HorizontalOffset = horizontalOffset;
+            }
+        }
     }
 }

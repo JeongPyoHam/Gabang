@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
@@ -9,6 +10,26 @@ using System.Windows;
 using System.Windows.Media;
 
 namespace Gabang.Controls {
+
+    public class BatchPropertyChangeEventArgs : EventArgs {
+        public enum BatchState {
+            Begin,
+            End,
+        }
+
+        public BatchPropertyChangeEventArgs(BatchState state) {
+            State = state;
+        }
+
+        public BatchState State { get; }
+    }
+
+    public interface IBatchPropertyChagned : INotifyPropertyChanged {
+        /// <summary>
+        /// Hint a batch of PropertyChanged event begins, and end
+        /// </summary>
+        event EventHandler<BatchPropertyChangeEventArgs> BatchStateChanged;
+    }
 
     public class GridPanel2 : FrameworkElement {
         private double[] _xPositions;
@@ -22,6 +43,8 @@ namespace Gabang.Controls {
         public GridPanel2() {
             _visualChildren = new VisualCollection(this);
             ClipToBounds = true;
+
+            Initialize();
         }
 
         public int RowCount { get { return 50; } }
@@ -36,31 +59,109 @@ namespace Gabang.Controls {
 
         public Brush GridLineBrush { get { return Brushes.Black; } }
 
+        private double _horizontalOffset;
+        public double HorizontalOffset {
+            get { return _horizontalOffset; }
+            set {
+                _horizontalOffset = value;
+                InvalidateScroll();
+            }
+        }
+        public double HorizontalExtent { get; set; }
+        public double HorizontalViewport { get; set; }
+
+        public double VerticalOffset { get; set; }
+        public double VerticalExtent { get; set; }
+        public double VerticalViewport { get; set; }
+
+        private void InvalidateScroll() {
+            RefreshChildren();
+        }
+
+        GridRange _dataViewport;
+        Grid<GridPanel2Visual> _visualGrid;
+
         public void AddChileren() {
             Stopwatch watch = Stopwatch.StartNew();
 
-            _visualChildren.Clear();
+            Initialize();
 
-            _xPositions = new double[ColumnCount];
-            _yPositions = new double[RowCount];
-            _width = new double[ColumnCount];
-            _height = new double[RowCount];
+            int columnIndex = Array.BinarySearch<double>(_xPositions, HorizontalOffset);
+            if (columnIndex < 0) {
+                columnIndex = ~columnIndex;
+            }
 
-            _gridLine = new DrawingVisual();
+            int rowIndex = Array.BinarySearch<double>(_yPositions, VerticalOffset);
+            if (rowIndex < 0) {
+                rowIndex = ~rowIndex;
+            }
 
-            for (int r = 0; r < RowCount; r++) {
-                for (int c = 0; c < ColumnCount; c++) {
+            double width = 0.0;
+            int columnEnd = columnIndex;
+            for (int c = columnIndex; c < ColumnCount; c++) {
+                width += _width[c];
+                columnEnd = c;
+                if (width >= RenderSize.Width) {    // TODO: DoubleUtil
+                    break;
+                }
+            }
+
+            double height = 0.0;
+            int rowEnd = rowIndex;
+            for (int r = rowIndex; r < RowCount; r++) {
+                height += _height[r];
+                rowEnd = r;
+                if (height >= RenderSize.Height) {    // TODO: DoubleUtil
+                    break;
+                }
+            }
+
+            _dataViewport = new GridRange(
+                new Range(rowIndex, rowEnd - rowIndex + 1),
+                new Range(columnIndex, columnEnd - columnIndex + 1));
+
+            _visualGrid = new Grid<GridPanel2Visual>(
+                _dataViewport.Rows.Count,
+                _dataViewport.Columns.Count,
+                (r, c) => {
                     var visual = new GridPanel2Visual();
                     visual.Row = r;
                     visual.Column = c;
+                    return visual;
+            });
 
-                    _visualChildren.Add(visual);
+
+            // add children
+            for (int r = 0; r < _dataViewport.Rows.Count; r++) {
+                for (int c = 0; c < _dataViewport.Columns.Count; c++) {
+                    _visualChildren.Add(_visualGrid[r, c]);
                 }
             }
 
             RefreshChildren();
 
             Trace.WriteLine(string.Format("Add:{0}", watch.ElapsedMilliseconds));
+        }
+
+        private void Initialize() {
+            if (_visualChildren != null) {
+                _visualChildren.Clear();
+            }
+            _visualChildren = new VisualCollection(this);
+
+            _xPositions = new double[ColumnCount];
+            _yPositions = new double[RowCount];
+            _width = new double[ColumnCount];
+            for (int i = 0; i < ColumnCount; i++) {
+                _width[i] = MinWidth;
+            }
+            _height = new double[RowCount];
+            for (int i = 0; i < RowCount; i++) {
+                _height[i] = MinHeight;
+            }
+            ComputePositions();
+
+            _gridLine = new DrawingVisual();
         }
 
         private int generation = 0;
@@ -99,6 +200,9 @@ namespace Gabang.Controls {
             DrawGridLine();
 
             generation++;
+            if (generation > 10) {
+                generation = 0;
+            }
 
             Trace.WriteLine(string.Format("Refesh:{0}", watch.ElapsedMilliseconds));
         }
