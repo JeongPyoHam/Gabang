@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Gabang.Controls {
-    public class DynamicGridCellData<TData> : IndexedItem, INotifyPropertyChanged {
+    public class DynamicGridCellData<TData> : IIndexedItem, INotifyPropertyChanged {
         public DynamicGridCellData(int index = -1) {
             Index = index;
         }

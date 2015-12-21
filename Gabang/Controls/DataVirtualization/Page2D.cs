@@ -5,22 +5,31 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace Gabang.Controls {
-    public class Page2D<T> {
+    internal class Page2D<T> {
         private Grid<PageItem<T>> _grid;
+
+        private List<DelegateList<PageItem<T>>> _list;
 
         public Page2D(PageNumber pageNumber, GridRange range) {
             PageNumber = pageNumber;
             Range = range;
             Node = new LinkedListNode<Page2D<T>>(this);
-            LastAccessTime = DateTime.MinValue;
+            LastAccessTime = DateTime.UtcNow;
 
-            List<PageItem<T>> list = new List<PageItem<T>>(range.Rows.Count * range.Columns.Count);
-            for (int c = 0; c < range.Columns.Count; c++) {
-                for (int r = 0; r < range.Rows.Count; r++) {
-                    list.Add(new PageItem<T>(range.Columns.Start + c));
-                }
+            _grid = new Grid<PageItem<T>>(
+                range.Rows.Count,
+                range.Columns.Count,
+                (r, c) => new PageItem<T>(range.Columns.Start + c));
+
+            _list = new List<DelegateList<PageItem<T>>>(range.Rows.Count);
+            for (int r = 0; r < range.Rows.Count; r++) {
+                var row = new DelegateList<PageItem<T>>(
+                    range.Rows.Start + r,
+                    (c) => _grid[r, c],
+                    range.Columns.Count);
+
+                _list.Add(row);
             }
-            _grid = new Grid<PageItem<T>>(range.Rows.Count, range.Columns.Count, list);
         }
 
         public PageNumber PageNumber { get; }
@@ -35,6 +44,10 @@ namespace Gabang.Controls {
             Debug.Assert(Range.Contains(row, column));
 
             return _grid[row - Range.Rows.Start, column - Range.Columns.Start];
+        }
+
+        public DelegateList<PageItem<T>> GetItem(int row) {
+            return _list[row - Range.Rows.Start];
         }
 
         internal void PopulateData(IGrid<T> data) {

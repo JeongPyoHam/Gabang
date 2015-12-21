@@ -10,7 +10,7 @@ namespace Gabang.Controls {
     public class PageManager<T> {
         #region synchronized by _syncObj
 
-        private object _syncObj = new object();
+        private readonly object _syncObj = new object();
         private Dictionary<int, Page<T>> _banks = new Dictionary<int, Page<T>>();
         private Queue<Page<T>> _requests = new Queue<Page<T>>();
         private Task _loadTask = null;
@@ -121,7 +121,9 @@ namespace Gabang.Controls {
                 }
 
                 if (page != null) {
-                    await LoadAsync(page);
+                    IList<T> data = await _itemsProvider.GetRangeAsync(page.Range);
+
+                    page.PopulateData(data);
                 } else {
                     CleanOldPages();
                     cleanHasRun = true;
@@ -145,14 +147,6 @@ namespace Gabang.Controls {
                     // TODO: release hint
                 }
             }
-        }
-
-        private async Task LoadAsync(Page<T> page) {
-            var task = Task.Run(() => _itemsProvider.GetRangeAsync(page.Range));
-
-            IList<T> data = await task;
-
-            page.PopulateData(data);
         }
     }
 }

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Gabang.Controls {
-    public interface IndexedItem {
+    public interface IIndexedItem {
         int Index { get; }
     }
 }

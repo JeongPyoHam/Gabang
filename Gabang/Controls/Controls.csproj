@@ -54,8 +54,11 @@
     <Compile Include="DataInspect\DynamicGridStripe.cs" />
     <Compile Include="DataInspect\GridItem.cs" />
     <Compile Include="DataVirtualization\Common.cs" />
+    <Compile Include="DataVirtualization\Grid.cs" />
+    <Compile Include="DataVirtualization\IGridProvider.cs" />
     <Compile Include="DataVirtualization\IItemsProvider.cs" />
-    <Compile Include="DataVirtualization\IndexedItem.cs" />
+    <Compile Include="DataVirtualization\IIndexedItem.cs" />
+    <Compile Include="DataVirtualization\IListProvider.cs" />
     <Compile Include="DataVirtualization\Page.cs" />
     <Compile Include="DataVirtualization\Page2D.cs" />
     <Compile Include="DataVirtualization\PageItem.cs" />
@@ -64,8 +67,11 @@
     <Compile Include="DataVirtualization\PageNumber.cs" />
     <Compile Include="DataVirtualization\DelegateList.cs" />
     <Compile Include="DataInspect\DynamicGridCellData.cs" />
+    <Compile Include="GridPanel\GridLineVisual.cs" />
     <Compile Include="GridPanel\GridPanel.cs" />
     <Compile Include="GridPanel\GridPanel2.cs" />
+    <Compile Include="GridPanel\GridPoints.cs" />
+    <Compile Include="GridPanel\TextVisual.cs" />
     <Compile Include="SynchronizedStackPanel.cs" />
     <Compile Include="Data\GridByList.cs" />
     <Compile Include="Data\GridByDictionary.cs" />
@@ -78,6 +84,7 @@
     <Compile Include="Data\VirtualizingGrid.cs" />
     <Compile Include="Data\VirtualizingGridItem.cs" />
     <Compile Include="DummyControl.cs" />
+    <Compile Include="TaskUtilities.cs" />
     <Compile Include="VirtualizingGrid\ConstantCountList.cs" />
     <Compile Include="VirtualizingGrid\ConstantList.cs" />
     <Compile Include="VirtualizingGrid\IntegerList.cs" />

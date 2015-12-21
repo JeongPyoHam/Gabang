@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -11,10 +12,11 @@ namespace Gabang.Controls {
     public class Page2DManager<T> {
         #region synchronized by _syncObj
 
-        private object _syncObj = new object();
+        private readonly object _syncObj = new object();
         private Dictionary<int, Dictionary<int, Page2D<T>>> _banks = new Dictionary<int, Dictionary<int, Page2D<T>>>();
         private Queue<Page2D<T>> _requests = new Queue<Page2D<T>>();
         private Task _loadTask = null;
+        private Dictionary<int, DelegateList<PageItem<T>>> _rows = new Dictionary<int, DelegateList<PageItem<T>>>();
 
         #endregion
 
@@ -48,27 +50,81 @@ namespace Gabang.Controls {
 
         public TimeSpan Timeout { get; }
 
+        public bool WaitForItemRealization { get { return true; } }
+
         public PageItem<T> GetItem(int row, int column) {
+            bool shouldWait = false;
+            Page2D<T> foundPage = null;
+            Task waitTask;
+
             lock (_syncObj) {
                 int rowPageNumber, columnPageNumber;
                 ComputePageNumber(row, column, out rowPageNumber, out columnPageNumber);
 
                 Dictionary<int, Page2D<T>> bank;
-                Page2D<T> foundPage;
+
                 if (_banks.TryGetValue(rowPageNumber, out bank)) {
                     if (!bank.TryGetValue(columnPageNumber, out foundPage)) {
                         foundPage = CreateEmptyPage(new PageNumber(rowPageNumber, columnPageNumber));
+                        shouldWait = WaitForItemRealization;
                         bank.Add(columnPageNumber, foundPage);
                     }
-
                 } else {
                     bank = new Dictionary<int, Page2D<T>>();
                     foundPage = CreateEmptyPage(new PageNumber(rowPageNumber, columnPageNumber));
+                    shouldWait = WaitForItemRealization;
                     bank.Add(columnPageNumber, foundPage);
                     _banks.Add(rowPageNumber, bank);
                 }
 
-                return foundPage.GetItem(row, column);
+                if (shouldWait) {
+                    int firstRow = foundPage.Range.Rows.Start;
+                    int firstColumn = foundPage.Range.Columns.Start;
+                    var pageItem = foundPage.GetItem(firstRow, firstColumn);
+                    waitTask = WaitPropertyChangeAsync(pageItem);
+                } else {
+                    waitTask = Task.FromResult<object>(null);
+                }
+            }
+
+            waitTask.Wait(TimeSpan.FromMilliseconds(1000));
+
+            return foundPage.GetItem(row, column);
+        }
+
+        private static async Task WaitPropertyChangeAsync(PageItem<T> pageItem) {
+            var tcs = new TaskCompletionSource<object>();
+            PropertyChangedEventHandler handler = (sender, args) => tcs.TrySetResult(null);
+            try {
+                pageItem.PropertyChanged += handler;
+                await TaskUtilities.SwitchToBackgroundThread();
+                await tcs.Task;
+            } finally {
+                pageItem.PropertyChanged -= handler;
+            }
+        }
+
+        public DelegateList<DelegateList<PageItem<T>>> GetItemsSource() {
+            var itemsSource = new DelegateList<DelegateList<PageItem<T>>>(
+                0,
+                (row) => GetRow(row),
+                RowCount);
+
+            return itemsSource;
+        }
+
+        public DelegateList<PageItem<T>> GetRow(int row) {
+            DelegateList<PageItem<T>> list;
+            lock (_syncObj) {
+                if (_rows.TryGetValue(row, out list)) {
+                    return list;
+                }
+                list = new DelegateList<PageItem<T>>(
+                    row,
+                    (column) => GetItem(row, column),
+                    ColumnCount);
+                _rows.Add(row, list);
+                return list;
             }
         }
 
@@ -140,7 +196,7 @@ namespace Gabang.Controls {
                     if (_requests.Count == 0) {
                         if (cleanHasRun) {
                             _loadTask = null;
-                            return;
+                            break;
                         } else {
 
                         }
@@ -151,7 +207,9 @@ namespace Gabang.Controls {
                 }
 
                 if (page != null) {
-                    await LoadAsync(page);
+                    IGrid<T> data = await _itemsProvider.GetRangeAsync(page.Range);
+
+                    page.PopulateData(data);
                 } else {
                     CleanOldPages();
                     cleanHasRun = true;
@@ -166,10 +224,14 @@ namespace Gabang.Controls {
                     IEnumerable<KeyValuePair<int, Page2D<T>>> toRemove;
 
                     lock (_syncObj) {
-                        toRemove = bank.Where(kv => (kv.Value.LastAccessTime < lastTime)).ToList();
+                        toRemove = bank.Where(kv => (kv.Value.LastAccessTime < lastTime) && kv.Key != 0).ToList();
+                        if (toRemove.Count() <= 0) {
+                            break;
+                        }
                     }
 
                     foreach (var item in toRemove) {
+                        Trace.WriteLine(string.Format("Removing:Page:{0}", item.Value.PageNumber));
                         lock (_syncObj) {
                             bank.Remove(item.Key);
                         }
@@ -178,31 +240,5 @@ namespace Gabang.Controls {
                 }
             }
         }
-
-        private async Task LoadAsync(Page2D<T> page) {
-            var task = Task.Run(() => _itemsProvider.GetRangeAsync(page.Range));
-
-            IGrid<T> data = await task;
-
-            page.PopulateData(data);
-        }
-    }
-
-    /// <summary>
-    /// <see cref="IGrid{T}"/> provider
-    /// </summary>
-    /// <typeparam name="TData">the type of grid item</typeparam>
-    public interface IGridProvider<TData> {
-        int RowCount { get; }
-
-        int ColumnCount { get; }
-
-        Task<IGrid<TData>> GetRangeAsync(GridRange gridRange);
-    }
-
-    public interface IListProvider<TData> {
-        int Count { get; }
-
-        Task<IList<TData>> GetRangeAsync(Range range);
     }
 }

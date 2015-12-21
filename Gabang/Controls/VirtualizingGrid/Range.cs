@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -44,6 +45,13 @@ namespace Gabang.Controls {
         public bool Intersect(Range other) {
             return (this._end > other._start) && (this._start < other._end);
         }
+
+        // TODO: throw exception if it is in iteration
+        public IEnumerable<int> GetEnumerable() {
+            for (int i = _start; i < _end; i++) {
+                yield return i;
+            }
+        }
     }
 
     public struct GridRange {
@@ -57,6 +65,10 @@ namespace Gabang.Controls {
 
         public bool Contains(int row, int column) {
             return Rows.Contains(row) && Columns.Contains(column);
+        }
+
+        public GridRange Intersect(GridRange range) {
+            throw new NotImplementedException();
         }
     }
 }

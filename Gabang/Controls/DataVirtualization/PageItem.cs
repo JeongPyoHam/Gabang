@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Gabang.Controls {
-    public class PageItem<TData> : IndexedItem, INotifyPropertyChanged {
+    public class PageItem<TData> : IIndexedItem, INotifyPropertyChanged {
         public PageItem(int index = -1) {
             Index = index;
         }
@@ -18,15 +18,11 @@ namespace Gabang.Controls {
         public TData Data {
             get { return _data; }
             set {
-                SetData(value);
+                SetValue(ref _data, value);
             }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
-
-        protected virtual void SetData(TData value) {
-            SetValue<TData>(ref _data, value, "Data");
-        }
 
         protected virtual bool SetValue<T>(ref T storage, T value, [CallerMemberName]string propertyName = null) {
             if (EqualityComparer<T>.Default.Equals(storage, value)) {

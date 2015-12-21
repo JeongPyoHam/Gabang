@@ -7,7 +7,7 @@ namespace Gabang.Controls {
     /// delegate of getting item and implements IList
     /// </summary>
     /// <typeparam name="T">type of item value</typeparam>
-    public class DelegateList<T> : IList<T>, IList, IndexedItem where T : IndexedItem {
+    public class DelegateList<T> : IList<T>, IList, IIndexedItem where T : IIndexedItem {
         #region field and ctor
 
         private readonly string ReadOnlyExceptionMessage = $"{typeof(DelegateList<T>)} is read only";

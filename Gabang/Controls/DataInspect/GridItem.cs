@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Gabang.Controls {
-    public struct GridItem : IndexedItem {
+    public struct GridItem : IIndexedItem {
         public GridItem(int row, int column, bool isDefault = false) {
             Row = row;
             Column = column;
@@ -19,7 +19,7 @@ namespace Gabang.Controls {
 
         public int Column { get; }
 
-        int IndexedItem.Index
+        int IIndexedItem.Index
         {
             get
             {
