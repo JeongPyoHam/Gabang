@@ -40,13 +40,14 @@ namespace Gabang.Controls {
         }
 
         private bool _drawValid = false;
-        public void Draw() {
-            if (_drawValid) return;
+        public bool Draw() {
+            if (_drawValid) return false;
             DrawingContext dc = RenderOpen();
             try {
                 var formattedText = GetFormattedText();
                 dc.DrawText(formattedText, new Point(0, 0));
                 _drawValid = true;
+                return true;
             } finally {
                 dc.Close();
             }

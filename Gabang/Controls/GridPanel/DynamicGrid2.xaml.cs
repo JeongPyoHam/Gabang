@@ -56,7 +56,7 @@ namespace Gabang.Controls {
 
         public Task<IGrid<string>> GetRangeAsync(GridRange gridRange) {
             return Task.Run(async () => {
-                await Task.Delay(TimeSpan.FromMilliseconds(100));
+                await Task.Delay(TimeSpan.FromMilliseconds(1000));
                 return (IGrid<string>)new Grid<string>(gridRange, (r, c) => string.Format("{0}:{1}", r, c));
             });
         }
