@@ -12,39 +12,19 @@ using System.Windows.Documents;
 using System.Windows.Media;
 
 namespace Gabang.Controls {
-
-    public class BatchPropertyChangeEventArgs : EventArgs {
-        public enum BatchState {
-            Begin,
-            End,
-        }
-
-        public BatchPropertyChangeEventArgs(BatchState state) {
-            State = state;
-        }
-
-        public BatchState State { get; }
-    }
-
-    public interface IBatchPropertyChagned {
-        /// <summary>
-        /// Hint a batch of PropertyChanged event begins, and end
-        /// </summary>
-        event EventHandler<BatchPropertyChangeEventArgs> BatchStateChanged;
-    }
-
     public class GridPanel2 : FrameworkElement {
         private GridLineVisual _gridLine;
         private VisualCollection _visualChildren;
 
-        private GridPoints _points;
-
         public GridPanel2() {
             _visualChildren = new VisualCollection(this);
+            _gridLine = new GridLineVisual();
             ClipToBounds = true;
-
-            Initialize();
         }
+
+        public IGridProvider<string> DataProvider { get; set; }
+
+        public GridPoints Points { get; set; }
 
         #region Font
 
@@ -82,22 +62,22 @@ namespace Gabang.Controls {
 
         #endregion
 
-        public int RowCount { get { return 50; } }
+        public int RowCount { get; set; }
 
-        public int ColumnCount { get { return 60; } }
+        public int ColumnCount { get; set; }
 
-        public double MinItemWidth { get { return _points.MinItemWidth; } }
+        public double MinItemWidth { get { return Points.MinItemWidth; } }
 
-        public double MinItemHeight { get { return _points.MinItemHeight; } }
+        public double MinItemHeight { get { return Points.MinItemHeight; } }
 
         public double GridLineThickness { get { return _gridLine.GridLineThickness; } }
 
         public Brush GridLineBrush { get { return _gridLine.GridLineBrush; } }
 
         public double HorizontalOffset {
-            get { return _points.HorizontalOffset; }
+            get { return Points.HorizontalOffset; }
             set {
-                _points.HorizontalOffset = value;
+                Points.HorizontalOffset = value;
                 InvalidateScroll();
             }
         }
@@ -106,9 +86,9 @@ namespace Gabang.Controls {
         public double HorizontalViewport { get; set; }
 
         public double VerticalOffset {
-            get { return _points.VerticalOffset; }
+            get { return Points.VerticalOffset; }
             set {
-                _points.VerticalOffset = value;
+                Points.VerticalOffset = value;
                 InvalidateScroll();
             }
         }
@@ -116,31 +96,21 @@ namespace Gabang.Controls {
         public double VerticalExtent { get; set; }
         public double VerticalViewport { get; set; }
 
-        private void InvalidateScroll() {
-            RefreshVisuals();
+        private async void InvalidateScroll() {
+            await RefreshVisuals();
         }
 
         GridRange _dataViewport;
         Grid<TextVisual> _visualGrid;
 
-        public void AddChileren() {
-            Stopwatch watch = Stopwatch.StartNew();
-
-            Initialize();
-
-            RefreshChildren();
-
-            Trace.WriteLine(string.Format("Add:{0}", watch.ElapsedMilliseconds));
-        }
-
         private GridRange ComputeDataViewport() {
-            int columnStart = _points.xIndex(HorizontalOffset);
-            int rowStart = _points.yIndex(VerticalOffset);
+            int columnStart = Points.xIndex(HorizontalOffset);
+            int rowStart = Points.yIndex(VerticalOffset);
 
             double width = 0.0;
             int columnCount = 0;
             for (int c = columnStart; c < ColumnCount; c++) {
-                width += _points.GetWidth(c);
+                width += Points.GetWidth(c);
                 columnCount++;
                 if (width >= RenderSize.Width) {    // TODO: DoubleUtil
                     break;
@@ -151,7 +121,7 @@ namespace Gabang.Controls {
             int rowEnd = rowStart;
             int rowCount = 0;
             for (int r = rowStart; r < RowCount; r++) {
-                height += _points.GetHeight(r);
+                height += Points.GetHeight(r);
                 rowCount++;
                 if (height >= RenderSize.Height) {    // TODO: DoubleUtil
                     break;
@@ -163,47 +133,16 @@ namespace Gabang.Controls {
                 new Range(columnStart, columnCount));
         }
 
-        private void Initialize() {
-            if (_visualChildren != null) {
-                _visualChildren.Clear();
-            }
-            _visualChildren = new VisualCollection(this);
-
-            _points = new GridPoints(RowCount, ColumnCount);
-            
-            _gridLine = new GridLineVisual();
-        }
-
-        private int generation = 0;
-        public void RefreshChildren() {
-            Stopwatch watch = Stopwatch.StartNew();
-
-            generation++;
-            if (generation > 10) {
-                generation = 0;
-            }
-
-            foreach (TextVisual visual in _visualChildren) {
-                visual.Text = Text(visual.Row, visual.Column);
-            }
-
-            RefreshVisuals();
-
-            Trace.WriteLine(string.Format("Refesh:{0}", watch.ElapsedMilliseconds));
-        }
-
-        private string Text(int r, int c) {
-            return string.Format("{0}:{1}:{2}", r.ToString(), c.ToString(), generation.ToString());
-        }
-
-        private void RefreshVisuals() {
+        private async Task RefreshVisuals() {
             using (var elapsed = new Elapsed("RefreshVisuals:")) {
                 GridRange orgViewport = _dataViewport;
-                _dataViewport = ComputeDataViewport();
+                GridRange newViewport = ComputeDataViewport();
+
+                var data = await DataProvider.GetRangeAsync(newViewport);
 
                 var orgGrid = _visualGrid;
                 _visualGrid = new Grid<TextVisual>(
-                    _dataViewport,
+                    newViewport,
                     (r, c) => {
                         if (orgViewport.Contains(r, c)) {
                             return orgGrid[r, c];
@@ -211,7 +150,7 @@ namespace Gabang.Controls {
                         var visual = new TextVisual();
                         visual.Row = r;
                         visual.Column = c;
-                        visual.Text = Text(r, c);
+                        visual.Text = data[r, c];
                         visual.Typeface = Typeface;
                         visual.FontSize = FontSize * (96.0 /72.0);  // TODO: test in High DPI
                         return visual;
@@ -220,8 +159,8 @@ namespace Gabang.Controls {
 
                 // add children
                 _visualChildren.Clear();
-                foreach (int c in _dataViewport.Columns.GetEnumerable()) {
-                    foreach (int r in _dataViewport.Rows.GetEnumerable()) {
+                foreach (int c in newViewport.Columns.GetEnumerable()) {
+                    foreach (int r in newViewport.Rows.GetEnumerable()) {
                         _visualChildren.Add(_visualGrid[r, c]);
                     }
                 }
@@ -232,46 +171,42 @@ namespace Gabang.Controls {
                     int r = visual.Row;
                     int c = visual.Column;
 
-                    _points.SetWidth(c, Math.Max(_points.GetWidth(c), visual.ContentBounds.Right+ GridLineThickness));
-                    _points.SetHeight(r, Math.Max(_points.GetHeight(r), visual.ContentBounds.Bottom + GridLineThickness));
+                    Points.SetWidth(c, Math.Max(Points.GetWidth(c), visual.ContentBounds.Right+ GridLineThickness));
+                    Points.SetHeight(r, Math.Max(Points.GetHeight(r), visual.ContentBounds.Bottom + GridLineThickness));
                 }
 
                 foreach (TextVisual visual in _visualChildren) {
                     var transform = visual.Transform as TranslateTransform;
                     if (transform == null) {
-                        visual.Transform = new TranslateTransform(_points.xPosition(visual.Column), _points.yPosition(visual.Row));
+                        visual.Transform = new TranslateTransform(Points.xPosition(visual.Column), Points.yPosition(visual.Row));
                     } else {
-                        transform.X = _points.xPosition(visual.Column);
-                        transform.Y = _points.yPosition(visual.Row);
+                        transform.X = Points.xPosition(visual.Column);
+                        transform.Y = Points.yPosition(visual.Row);
                     }
                 }
+                _dataViewport = newViewport;
 
                 DrawGridLine();
 
-                HorizontalExtent = _points.HorizontalExtent;
-                HorizontalViewport = _points.GetWidth(_dataViewport.Columns);
-                VerticalExtent = _points.VerticalExtent;
-                VerticalViewport = _points.GetHeight(_dataViewport.Rows);
-            }
-        }
-
-        public void SetColumnWidth(int columnIndex, double width) {
-            // TOOD: if change is trivial, return
-
-            _points.SetWidth(columnIndex, width);
-            if (_dataViewport.Columns.Contains(columnIndex)) {
-                RefreshVisuals();
+                HorizontalExtent = Points.HorizontalExtent;
+                HorizontalViewport = Points.GetWidth(newViewport.Columns);
+                VerticalExtent = Points.VerticalExtent;
+                VerticalViewport = Points.GetHeight(newViewport.Rows);
             }
         }
 
         private void DrawGridLine() {
             if (_gridLine == null) return;
 
-            _gridLine.Draw(_dataViewport, _points);
+            _gridLine.Draw(_dataViewport, Points);
         }
 
-        protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo) {
-            RefreshVisuals();
+        protected override async void OnRenderSizeChanged(SizeChangedInfo sizeInfo) {
+            try {
+                await RefreshVisuals();
+            } catch (Exception ex) {
+                Debug.Fail(ex.Message);
+            }
 
             base.OnRenderSizeChanged(sizeInfo);
         }

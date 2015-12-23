@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -53,7 +54,12 @@ namespace Gabang.Controls {
 
         public T this[int rowIndex, int columnIndex] {
             get {
-                return _list[ListIndex(rowIndex, columnIndex)];
+                try {
+                    return _list[ListIndex(rowIndex, columnIndex)];
+                } catch (Exception) {
+                    Debugger.Break();
+                    throw;
+                }
             }
 
             set {

@@ -26,7 +26,7 @@ namespace Gabang.TreeGridTest {
 
         private void Refresh_Click(object sender, RoutedEventArgs e) {
             _stopWatch = Stopwatch.StartNew();
-            RootGrid.RefreshChildren();
+//            RootGrid.RefreshChildren();
 
             Trace.WriteLine(string.Format("GridPanel:RefreshClick:{0}", _stopWatch.ElapsedMilliseconds));
             _stopWatch.Reset();
@@ -43,7 +43,7 @@ namespace Gabang.TreeGridTest {
         private void Add_Click(object sender, RoutedEventArgs e) {
             _stopWatch = Stopwatch.StartNew();
 
-            RootGrid.AddChileren();
+//            RootGrid.AddChileren();
 
             Trace.WriteLine(string.Format("GridPanel:AddClick:{0}", _stopWatch.ElapsedMilliseconds));
             _stopWatch.Reset();
@@ -57,7 +57,7 @@ namespace Gabang.TreeGridTest {
 
             double horizontalOffset;
             if (double.TryParse(HorizontalOffsetBox.Text, out horizontalOffset)) {
-                RootGrid.HorizontalOffset = horizontalOffset;
+//                RootGrid.HorizontalOffset = horizontalOffset;
             }
         }
     }

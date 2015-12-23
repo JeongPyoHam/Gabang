@@ -25,16 +25,19 @@ namespace Gabang.Controls {
             _width = new double[ColumnCount];
             _height = new double[RowCount];
 
+            MinItemWidth = 20.0;
+            MinItemHeight = 10.0;
+
             InitializeWidthAndHeight();
         }
 
-        public int RowCount { get; }
+        private int RowCount { get; }
 
-        public int ColumnCount { get; }
+        private int ColumnCount { get; }
 
-        public double MinItemWidth { get { return 20.0; } }
+        public double MinItemWidth { get; set; }
 
-        public double MinItemHeight { get { return 10.0; } }
+        public double MinItemHeight { get; set; }
 
         public double VerticalOffset { get; set; }
 

@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Gabang.Controls {
+    [DebuggerDisplay("{Start},{Count}")]
     public struct Range {
         public Range(int start, int count) {
             _start = start;
@@ -54,6 +56,7 @@ namespace Gabang.Controls {
         }
     }
 
+    [DebuggerDisplay("Rows:{Rows.Start},{Rows.Count} Columns:{Columns.Start},{Columns.Count}")]
     public struct GridRange {
         public GridRange(Range rows, Range columns) {
             Rows = rows;
