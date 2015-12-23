@@ -42,6 +42,12 @@ namespace Gabang.Controls {
         public int RowCount { get { return 50; } }
 
         public int ColumnCount { get { return 60; } }
+
+        protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo) {
+            base.OnRenderSizeChanged(sizeInfo);
+
+            _gridPoints.OnViewportChanged();
+        }
     }
 
     class DataProvider : IGridProvider<string> {

@@ -36,7 +36,25 @@ namespace Gabang.Controls {
 
         public IGridProvider<string> DataProvider { get; set; }
 
-        public GridPoints Points { get; set; }
+        private GridPoints _gridPoints;
+        public GridPoints Points {
+            get {
+                return _gridPoints;
+            }
+            set {
+                if (_gridPoints != null) {
+                    _gridPoints.ViewportChanged -= GridPoints_ViewportChanged;
+                }
+                _gridPoints = value;
+                if (_gridPoints != null) {
+                    _gridPoints.ViewportChanged += GridPoints_ViewportChanged;
+                }
+            }
+        }
+
+        private void GridPoints_ViewportChanged(object sender, EventArgs e) {
+            RefreshVisuals();
+        }
 
         #region Font
 
@@ -186,18 +204,10 @@ namespace Gabang.Controls {
                 }
 
                 int c = visual.Column;
-                double orgWidth = Points.GetWidth(c);
-                double newWidth = visual.ContentBounds.Right + GridLineThickness;
-                if (newWidth > orgWidth) {
-                    Points.SetWidth(c, newWidth);
-                }
+                Points.SetWidth(c, Math.Max(Points.GetWidth(c), visual.ContentBounds.Right + GridLineThickness));
 
                 int r = visual.Row;
-                double orgHeight = Points.GetHeight(r);
-                double newHeight = visual.ContentBounds.Bottom + GridLineThickness;
-                if (newHeight > orgHeight) {
-                    Points.SetHeight(r, newHeight);
-                }
+                Points.SetHeight(r, Math.Max(Points.GetHeight(r), visual.ContentBounds.Bottom + GridLineThickness));
             }
 
             foreach (TextVisual visual in _visualChildren) {
@@ -243,7 +253,6 @@ namespace Gabang.Controls {
 
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo) {
             base.OnRenderSizeChanged(sizeInfo);
-            RefreshVisuals();
         }
 
         protected override Size MeasureOverride(Size availableSize) {

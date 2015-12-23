@@ -31,6 +31,14 @@ namespace Gabang.Controls {
             InitializeWidthAndHeight();
         }
 
+        public event EventHandler ViewportChanged;
+
+        public void OnViewportChanged() {
+            if (ViewportChanged != null) {
+                ViewportChanged(this, EventArgs.Empty);
+            }
+        }
+
         private int RowCount { get; }
 
         private int ColumnCount { get; }
@@ -70,8 +78,11 @@ namespace Gabang.Controls {
         }
 
         public void SetWidth(int xIndex, double value) {
-            _width[xIndex] = value;
-            _xPositionValid = false;
+            if (_width[xIndex] < value) {   // TODO: double util
+                _width[xIndex] = value;
+                _xPositionValid = false;
+                OnViewportChanged();
+            }
         }
 
         public double GetWidth(Range range) {
@@ -83,8 +94,11 @@ namespace Gabang.Controls {
         }
 
         public void SetHeight(int yIndex, double value) {
-            _height[yIndex] = value;
-            _yPositionValid = false;
+            if (_height[yIndex] < value) {  // TODO: double util
+                _height[yIndex] = value;
+                _yPositionValid = false;
+                OnViewportChanged();
+            }
         }
 
         public double GetHeight(Range range) {
