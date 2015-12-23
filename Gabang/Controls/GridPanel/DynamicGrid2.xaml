@@ -21,13 +21,13 @@
         <!-- Row 0 -->
         <Rectangle Fill="Red"
                    Grid.Row="0" Grid.Column="0" MinWidth="10" MinHeight="10"/>
-        <local:GridPanel2 x:Name="ColumnHeader"
+        <local:GridPanel2 x:Name="ColumnHeader" GridType="ColumnHeader"
                           Grid.Row="0" Grid.Column="1"/>
         <Rectangle Fill="Green"
                    Grid.Row="0" Grid.Column="2" MinWidth="10" MinHeight="10"/>
         
         <!-- Row 1 -->
-        <local:GridPanel2 x:Name="RowHeader"
+        <local:GridPanel2 x:Name="RowHeader" GridType="RowHeader"
                           Grid.Row="1" Grid.Column="0"/>
         <local:GridPanel2 x:Name="Data"
                           Grid.Row="1" Grid.Column="1"/>

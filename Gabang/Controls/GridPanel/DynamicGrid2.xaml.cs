@@ -48,6 +48,22 @@ namespace Gabang.Controls {
 
             _gridPoints.OnViewportChanged();
         }
+
+        protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e) {
+            Point pt = e.GetPosition(this);
+
+            HitTestResult result = VisualTreeHelper.HitTest(this, pt);
+            if (result.VisualHit is TextVisual) {
+                var textVisual = (TextVisual)result.VisualHit;
+                textVisual.ToggleHighlight();
+
+                e.Handled = true;
+            }
+
+            if (!e.Handled) {
+                base.OnMouseLeftButtonDown(e);
+            }
+        }
     }
 
     class DataProvider : IGridProvider<string> {
@@ -62,7 +78,7 @@ namespace Gabang.Controls {
 
         public Task<IGrid<string>> GetRangeAsync(GridRange gridRange) {
             return Task.Run(async () => {
-                await Task.Delay(TimeSpan.FromMilliseconds(1000));
+                await Task.Delay(TimeSpan.FromMilliseconds(1));
                 return (IGrid<string>)new Grid<string>(gridRange, (r, c) => string.Format("{0}:{1}", r, c));
             });
         }

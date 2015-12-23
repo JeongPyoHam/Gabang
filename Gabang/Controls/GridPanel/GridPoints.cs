@@ -73,8 +73,8 @@ namespace Gabang.Controls {
             return _yPositions[yIndex] - VerticalOffset;
         }
 
-        public double GetWidth(int xIndex) {
-            return _width[xIndex];
+        public double GetWidth(int columnIndex) {
+            return _width[columnIndex];
         }
 
         public void SetWidth(int xIndex, double value) {
@@ -89,8 +89,8 @@ namespace Gabang.Controls {
             return Size(range, _xPositions);
         }
 
-        public double GetHeight(int yIndex) {
-            return _height[yIndex];
+        public double GetHeight(int rowIndex) {
+            return _height[rowIndex];
         }
 
         public void SetHeight(int yIndex, double value) {

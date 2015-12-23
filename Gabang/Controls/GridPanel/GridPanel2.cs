@@ -14,7 +14,14 @@ using System.Windows.Documents;
 using System.Windows.Media;
 
 namespace Gabang.Controls {
+    public enum GridType {
+        Data,
+        ColumnHeader,
+        RowHeader,
+    }
+
     public class GridPanel2 : FrameworkElement {
+
         private TaskScheduler ui;
         private BlockingCollection<Func<Task>> _visualRefreshActions;
 
@@ -34,6 +41,8 @@ namespace Gabang.Controls {
             Task.Run(() => StartVisualRefresh());
         }
 
+        public GridType GridType { get; set; }
+
         public IGridProvider<string> DataProvider { get; set; }
 
         private GridPoints _gridPoints;
@@ -50,10 +59,6 @@ namespace Gabang.Controls {
                     _gridPoints.ViewportChanged += GridPoints_ViewportChanged;
                 }
             }
-        }
-
-        private void GridPoints_ViewportChanged(object sender, EventArgs e) {
-            RefreshVisuals();
         }
 
         #region Font
@@ -199,15 +204,18 @@ namespace Gabang.Controls {
             }
 
             foreach (TextVisual visual in _visualChildren) {
-                if (!visual.Draw()) {
+                int c = visual.Column;
+                int r = visual.Row;
+
+                double width = Points.GetWidth(c) - GridLineThickness;
+                double height = Points.GetHeight(r) - GridLineThickness;
+
+                if (!visual.Draw(new Size(width, height))) {
                     continue;
                 }
 
-                int c = visual.Column;
-                Points.SetWidth(c, Math.Max(Points.GetWidth(c), visual.ContentBounds.Right + GridLineThickness));
-
-                int r = visual.Row;
-                Points.SetHeight(r, Math.Max(Points.GetHeight(r), visual.ContentBounds.Bottom + GridLineThickness));
+                Points.SetWidth(c, Math.Max(width, visual.Size.Width + GridLineThickness));
+                Points.SetHeight(r, Math.Max(height, visual.Size.Height + GridLineThickness));
             }
 
             foreach (TextVisual visual in _visualChildren) {
@@ -257,7 +265,8 @@ namespace Gabang.Controls {
 
         protected override Size MeasureOverride(Size availableSize) {
             using (var elapsed = new Elapsed("Measure:")) {
-                return base.MeasureOverride(availableSize);
+                Size measured = base.MeasureOverride(availableSize);
+                return measured;
             }
         }
 
@@ -279,6 +288,16 @@ namespace Gabang.Controls {
                 throw new ArgumentOutOfRangeException("index");
             if (index == 0) return _gridLine;
             return _visualChildren[index - 1];
+        }
+
+        private void GridPoints_ViewportChanged(object sender, EventArgs e) {
+            if (GridType == GridType.ColumnHeader && RowCount > 0) {
+                Height = _gridPoints.GetHeight(0);
+            } else if (GridType == GridType.RowHeader && ColumnCount > 0) {
+                Width = _gridPoints.GetWidth(0);
+            }
+
+            RefreshVisuals();
         }
 
         class Elapsed : IDisposable {
