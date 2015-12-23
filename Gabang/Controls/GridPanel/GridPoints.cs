@@ -40,11 +40,22 @@ namespace Gabang.Controls {
 
         public double HorizontalOffset { get; set; }
 
+        public double VerticalExtent {
+            get {
+                return yPosition(RowCount);
+            }
+        }
+
+        public double HorizontalExtent {
+            get {
+                return xPosition(ColumnCount);
+            }
+        }
+
         public double xPosition(int xIndex) {
             EnsureXPositions();
             return _xPositions[xIndex] - HorizontalOffset;
         }
-
 
         public double yPosition(int yIndex) {
             EnsureYPositions();
@@ -93,7 +104,7 @@ namespace Gabang.Controls {
 
         private int Index(double position, double[] positions) {
             int index = Array.BinarySearch(positions, position);
-            return (index < 0) ? ~index : index;
+            return (index < 0) ? (~index) - 1 : index;
         }
 
         private void InitializeWidthAndHeight() {

@@ -4,6 +4,11 @@ using System.Windows.Media;
 
 namespace Gabang.Controls {
     public class TextVisual : DrawingVisual {
+
+        public Typeface Typeface { get; set; }
+
+        public double FontSize { get; set; }
+
         public int Row { get; set; }
 
         public int Column { get; set; }
@@ -27,8 +32,8 @@ namespace Gabang.Controls {
                     Text,
                     CultureInfo.CurrentUICulture,
                     CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight,
-                    new Typeface("Segoe"),
-                    12.0,
+                    Typeface,
+                    FontSize,
                     Brushes.Black);
             }
             return _formattedText;

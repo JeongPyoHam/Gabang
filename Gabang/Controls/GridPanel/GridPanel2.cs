@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Documents;
 using System.Windows.Media;
 
 namespace Gabang.Controls {
@@ -45,7 +46,43 @@ namespace Gabang.Controls {
             Initialize();
         }
 
-        public int RowCount { get { return 40; } }
+        #region Font
+
+        public static readonly DependencyProperty FontFamilyProperty =
+                TextElement.FontFamilyProperty.AddOwner(typeof(GridPanel2));
+
+        [Localizability(LocalizationCategory.Font)]
+        public FontFamily FontFamily {
+            get { return (FontFamily)GetValue(FontFamilyProperty); }
+            set {
+                _typeFace = null;
+                SetValue(FontFamilyProperty, value);
+            }
+        }
+
+        public static readonly DependencyProperty FontSizeProperty =
+                TextElement.FontSizeProperty.AddOwner(
+                        typeof(GridPanel2));
+
+        [TypeConverter(typeof(FontSizeConverter))]
+        public double FontSize {
+            get { return (double)GetValue(FontSizeProperty); }
+            set { SetValue(FontSizeProperty, value); }
+        }
+
+        private Typeface _typeFace;
+        private Typeface Typeface {
+            get {
+                if (_typeFace == null) {
+                    _typeFace = FontFamily.GetTypefaces().First(tf => tf.Style == FontStyles.Normal && tf.Weight == FontWeights.Normal);
+                }
+                return _typeFace;
+            }
+        }
+
+        #endregion
+
+        public int RowCount { get { return 50; } }
 
         public int ColumnCount { get { return 60; } }
 
@@ -97,32 +134,33 @@ namespace Gabang.Controls {
         }
 
         private GridRange ComputeDataViewport() {
-            int columnIndex = _points.xIndex(HorizontalOffset);
-            int rowIndex = _points.yIndex(VerticalOffset);
+            int columnStart = _points.xIndex(HorizontalOffset);
+            int rowStart = _points.yIndex(VerticalOffset);
 
             double width = 0.0;
-            int columnEnd = columnIndex;
-            for (int c = columnIndex; c < columnIndex + ColumnCount; c++) {
+            int columnCount = 0;
+            for (int c = columnStart; c < ColumnCount; c++) {
                 width += _points.GetWidth(c);
-                columnEnd = c;
+                columnCount++;
                 if (width >= RenderSize.Width) {    // TODO: DoubleUtil
                     break;
                 }
             }
 
             double height = 0.0;
-            int rowEnd = rowIndex;
-            for (int r = rowIndex; r < rowIndex + RowCount; r++) {
+            int rowEnd = rowStart;
+            int rowCount = 0;
+            for (int r = rowStart; r < RowCount; r++) {
                 height += _points.GetHeight(r);
-                rowEnd = r;
+                rowCount++;
                 if (height >= RenderSize.Height) {    // TODO: DoubleUtil
                     break;
                 }
             }
 
             return new GridRange(
-                new Range(rowIndex, rowEnd - rowIndex + 1),
-                new Range(columnIndex, columnEnd - columnIndex + 1));
+                new Range(rowStart, rowCount),
+                new Range(columnStart, columnCount));
         }
 
         private void Initialize() {
@@ -174,6 +212,8 @@ namespace Gabang.Controls {
                         visual.Row = r;
                         visual.Column = c;
                         visual.Text = Text(r, c);
+                        visual.Typeface = Typeface;
+                        visual.FontSize = FontSize * (96.0 /72.0);  // TODO: test in High DPI
                         return visual;
                     });
 
@@ -192,8 +232,8 @@ namespace Gabang.Controls {
                     int r = visual.Row;
                     int c = visual.Column;
 
-                    _points.SetWidth(c, Math.Max(_points.GetWidth(c), visual.ContentBounds.Width + GridLineThickness));
-                    _points.SetHeight(r, Math.Max(_points.GetHeight(r), visual.ContentBounds.Height + GridLineThickness));
+                    _points.SetWidth(c, Math.Max(_points.GetWidth(c), visual.ContentBounds.Right+ GridLineThickness));
+                    _points.SetHeight(r, Math.Max(_points.GetHeight(r), visual.ContentBounds.Bottom + GridLineThickness));
                 }
 
                 foreach (TextVisual visual in _visualChildren) {
@@ -207,6 +247,20 @@ namespace Gabang.Controls {
                 }
 
                 DrawGridLine();
+
+                HorizontalExtent = _points.HorizontalExtent;
+                HorizontalViewport = _points.GetWidth(_dataViewport.Columns);
+                VerticalExtent = _points.VerticalExtent;
+                VerticalViewport = _points.GetHeight(_dataViewport.Rows);
+            }
+        }
+
+        public void SetColumnWidth(int columnIndex, double width) {
+            // TOOD: if change is trivial, return
+
+            _points.SetWidth(columnIndex, width);
+            if (_dataViewport.Columns.Contains(columnIndex)) {
+                RefreshVisuals();
             }
         }
 
