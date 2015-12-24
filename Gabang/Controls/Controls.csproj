@@ -67,12 +67,11 @@
     <Compile Include="DataVirtualization\PageNumber.cs" />
     <Compile Include="DataVirtualization\DelegateList.cs" />
     <Compile Include="DataInspect\DynamicGridCellData.cs" />
-    <Compile Include="GridPanel\DynamicGrid2.xaml.cs">
-      <DependentUpon>DynamicGrid2.xaml</DependentUpon>
+    <Compile Include="GridPanel\MatrixView.xaml.cs">
+      <DependentUpon>MatrixView.xaml</DependentUpon>
     </Compile>
     <Compile Include="GridPanel\GridLineVisual.cs" />
-    <Compile Include="GridPanel\GridPanel.cs" />
-    <Compile Include="GridPanel\GridPanel2.cs" />
+    <Compile Include="GridPanel\VisualGrid.cs" />
     <Compile Include="GridPanel\GridPoints.cs" />
     <Compile Include="GridPanel\TextVisual.cs" />
     <Compile Include="SynchronizedStackPanel.cs" />
@@ -98,7 +97,7 @@
     <Compile Include="VirtualizingGrid\VariableGridCell.cs" />
     <Compile Include="VirtualizingGrid\VariableGridColumn.cs" />
     <Compile Include="DataInspect\DynamicGridRow.cs" />
-    <Page Include="GridPanel\DynamicGrid2.xaml">
+    <Page Include="GridPanel\MatrixView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

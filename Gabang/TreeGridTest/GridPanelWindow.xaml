@@ -13,7 +13,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <control:DynamicGrid2 x:Name="RootGrid"/>
+        <control:MatrixView x:Name="RootGrid"/>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal">
             <Button x:Name="Add" Click="Add_Click">Add</Button>

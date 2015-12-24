@@ -12,6 +12,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Gabang.Controls;
 
 namespace Gabang.TreeGridTest {
     /// <summary>
@@ -20,6 +21,8 @@ namespace Gabang.TreeGridTest {
     public partial class GridPanelWindow : Window {
         public GridPanelWindow() {
             InitializeComponent();
+
+            RootGrid.DataProvider = new DataProvider(50, 60);
         }
 
         Stopwatch _stopWatch;
@@ -59,6 +62,24 @@ namespace Gabang.TreeGridTest {
             if (double.TryParse(HorizontalOffsetBox.Text, out horizontalOffset)) {
 //                RootGrid.HorizontalOffset = horizontalOffset;
             }
+        }
+    }
+
+    class DataProvider : IGridProvider<string> {
+        public DataProvider(int rowCount, int columnCount) {
+            RowCount = rowCount;
+            ColumnCount = columnCount;
+        }
+
+        public int ColumnCount { get; }
+
+        public int RowCount { get; }
+
+        public Task<IGrid<string>> GetRangeAsync(GridRange gridRange) {
+            return Task.Run(async () => {
+                await Task.Delay(TimeSpan.FromMilliseconds(100));
+                return (IGrid<string>)new Grid<string>(gridRange, (r, c) => string.Format("{0}:{1}", r, c));
+            });
         }
     }
 }

@@ -5,6 +5,21 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Gabang.Controls {
+    public enum ViewportChangeType {
+        HorizontalScroll,
+        VerticalScroll,
+        SizeChange,
+    }
+
+    public class ViewportChangedEventArgs : EventArgs {
+
+        public ViewportChangedEventArgs(ViewportChangeType changeType) {
+            ChangeType = changeType;
+        }
+
+        public ViewportChangeType ChangeType { get; }
+    }
+
     public class GridPoints {
         private double[] _xPositions;
         private double[] _yPositions;
@@ -31,11 +46,11 @@ namespace Gabang.Controls {
             InitializeWidthAndHeight();
         }
 
-        public event EventHandler ViewportChanged;
+        public event EventHandler<ViewportChangedEventArgs> ViewportChanged;
 
-        public void OnViewportChanged() {
+        public void OnViewportChanged(ViewportChangeType changeType) {
             if (ViewportChanged != null) {
-                ViewportChanged(this, EventArgs.Empty);
+                ViewportChanged(this, new ViewportChangedEventArgs(changeType));
             }
         }
 
@@ -47,9 +62,27 @@ namespace Gabang.Controls {
 
         public double MinItemHeight { get; set; }
 
-        public double VerticalOffset { get; set; }
+        private double _verticalOffset;
+        public double VerticalOffset {
+            get {
+                return _verticalOffset;
+            }
+            set {
+                _verticalOffset = value;
+                OnViewportChanged(ViewportChangeType.VerticalScroll);
+            }
+        }
 
-        public double HorizontalOffset { get; set; }
+        private double _horizontalOffset;
+        public double HorizontalOffset {
+            get {
+                return _horizontalOffset;
+            }
+            set {
+                _horizontalOffset = value;
+                OnViewportChanged(ViewportChangeType.HorizontalScroll);
+            }
+        }
 
         public double VerticalExtent {
             get {
@@ -81,7 +114,7 @@ namespace Gabang.Controls {
             if (_width[xIndex] < value) {   // TODO: double util
                 _width[xIndex] = value;
                 _xPositionValid = false;
-                OnViewportChanged();
+                OnViewportChanged(ViewportChangeType.HorizontalScroll);
             }
         }
 
@@ -97,7 +130,7 @@ namespace Gabang.Controls {
             if (_height[yIndex] < value) {  // TODO: double util
                 _height[yIndex] = value;
                 _yPositionValid = false;
-                OnViewportChanged();
+                OnViewportChanged(ViewportChangeType.VerticalScroll);
             }
         }
 
