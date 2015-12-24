@@ -67,6 +67,7 @@
     <Compile Include="DataVirtualization\PageNumber.cs" />
     <Compile Include="DataVirtualization\DelegateList.cs" />
     <Compile Include="DataInspect\DynamicGridCellData.cs" />
+    <Compile Include="GridPanel\GridParser.cs" />
     <Compile Include="GridPanel\MatrixView.xaml.cs">
       <DependentUpon>MatrixView.xaml</DependentUpon>
     </Compile>

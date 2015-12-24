@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Collection", "Collection\Collection.csproj", "{FA74ED98-3279-4215-A9E5-364615ACA6B2}"
 EndProject
@@ -10,6 +10,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TreeGridTest", "TreeGridTest\TreeGridTest.csproj", "{66E2AA25-19B2-4D43-9D55-697459E450DA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Controls", "Controls\Controls.csproj", "{386E5342-9BEB-4766-A9F4-21EFFEB3D831}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ControlsUnittest", "ControlsUnittest\ControlsUnittest.csproj", "{F41CC56A-1406-4730-849A-DB8EFA178688}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{386E5342-9BEB-4766-A9F4-21EFFEB3D831}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{386E5342-9BEB-4766-A9F4-21EFFEB3D831}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{386E5342-9BEB-4766-A9F4-21EFFEB3D831}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F41CC56A-1406-4730-849A-DB8EFA178688}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F41CC56A-1406-4730-849A-DB8EFA178688}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F41CC56A-1406-4730-849A-DB8EFA178688}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F41CC56A-1406-4730-849A-DB8EFA178688}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

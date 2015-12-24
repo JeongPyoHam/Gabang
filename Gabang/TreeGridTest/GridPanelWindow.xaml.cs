@@ -77,7 +77,7 @@ namespace Gabang.TreeGridTest {
 
         public Task<IGrid<string>> GetRangeAsync(GridRange gridRange) {
             return Task.Run(async () => {
-                await Task.Delay(TimeSpan.FromMilliseconds(1));
+                await Task.Delay(TimeSpan.FromMilliseconds(100));
                 return (IGrid<string>)new Grid<string>(gridRange, (r, c) => string.Format("{0}:{1}", r, c));
             });
         }
