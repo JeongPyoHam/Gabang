@@ -71,6 +71,17 @@ namespace Gabang.Controls {
             _gridPoints.OnViewportChanged(ViewportChangeType.SizeChange);
         }
 
+        protected override void OnMouseWheel(MouseWheelEventArgs e) {
+            if (e.Delta > 0 || e.Delta < 0) {
+                _gridPoints.VerticalOffset += (e.Delta > 0 ? -20 : 20); // TODO: make increment configurable
+                e.Handled = true;
+            }
+
+            if (!e.Handled) {
+                base.OnMouseWheel(e);
+            }
+        }
+
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e) {
             Point pt = e.GetPosition(this);
 

@@ -68,8 +68,14 @@ namespace Gabang.Controls {
                 return _verticalOffset;
             }
             set {
-                _verticalOffset = value;
-                OnViewportChanged(ViewportChangeType.VerticalScroll);
+                double newOffset = value;
+                if (newOffset < 0) newOffset = 0;
+                if (newOffset > VerticalExtent) newOffset = VerticalExtent;
+
+                if (_verticalOffset != newOffset) { // TODO: double util
+                    _verticalOffset = newOffset;
+                    OnViewportChanged(ViewportChangeType.VerticalScroll);
+                }
             }
         }
 
@@ -79,20 +85,28 @@ namespace Gabang.Controls {
                 return _horizontalOffset;
             }
             set {
-                _horizontalOffset = value;
-                OnViewportChanged(ViewportChangeType.HorizontalScroll);
+                double newOffset = value;
+                if (newOffset < 0) newOffset = 0;
+                if (newOffset > HorizontalExtent) newOffset = HorizontalExtent;
+
+                if (_horizontalOffset != newOffset) {   // TODO: double util
+                    _horizontalOffset = newOffset;
+                    OnViewportChanged(ViewportChangeType.HorizontalScroll);
+                }
             }
         }
 
         public double VerticalExtent {
             get {
-                return yPosition(RowCount);
+                EnsureYPositions();
+                return _yPositions[RowCount];
             }
         }
 
         public double HorizontalExtent {
             get {
-                return xPosition(ColumnCount);
+                EnsureXPositions();
+                return _xPositions[ColumnCount];
             }
         }
 
