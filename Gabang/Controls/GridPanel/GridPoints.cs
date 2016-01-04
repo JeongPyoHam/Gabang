@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls.Primitives;
+using System.Windows.Media;
 
 namespace Gabang.Controls {
     public enum ViewportChangeType {
@@ -46,14 +49,6 @@ namespace Gabang.Controls {
             InitializeWidthAndHeight();
         }
 
-        public event EventHandler<ViewportChangedEventArgs> ViewportChanged;
-
-        public void OnViewportChanged(ViewportChangeType changeType) {
-            if (ViewportChanged != null) {
-                ViewportChanged(this, new ViewportChangedEventArgs(changeType));
-            }
-        }
-
         private int RowCount { get; }
 
         private int ColumnCount { get; }
@@ -74,7 +69,6 @@ namespace Gabang.Controls {
 
                 if (_verticalOffset != newOffset) { // TODO: double util
                     _verticalOffset = newOffset;
-                    OnViewportChanged(ViewportChangeType.VerticalScroll);
                 }
             }
         }
@@ -91,7 +85,6 @@ namespace Gabang.Controls {
 
                 if (_horizontalOffset != newOffset) {   // TODO: double util
                     _horizontalOffset = newOffset;
-                    OnViewportChanged(ViewportChangeType.HorizontalScroll);
                 }
             }
         }
@@ -128,7 +121,6 @@ namespace Gabang.Controls {
             if (_width[xIndex] < value) {   // TODO: double util
                 _width[xIndex] = value;
                 _xPositionValid = false;
-                OnViewportChanged(ViewportChangeType.HorizontalScroll);
             }
         }
 
@@ -144,7 +136,6 @@ namespace Gabang.Controls {
             if (_height[yIndex] < value) {  // TODO: double util
                 _height[yIndex] = value;
                 _yPositionValid = false;
-                OnViewportChanged(ViewportChangeType.VerticalScroll);
             }
         }
 

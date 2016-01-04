@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -19,10 +20,51 @@ namespace Gabang.Controls {
         ColumnHeader,
         RowHeader,
     }
+    
+    internal enum ScrollType {
+        Invalid,
+        LineUp,
+        LineDown,
+        LineLeft,
+        LineRight,
+        PageUp,
+        PageDown,
+        PageLeft,
+        PageRight,
+        SetHorizontalOffset,
+        SetVerticalOffset,
+        MouseWheel,
+        SizeChange,
+    }
+
+    internal struct Command {
+        private static Lazy<Command> _empty = new Lazy<Command>(() => new Command(ScrollType.Invalid, 0));
+        public static Command Empty { get { return _empty.Value; } }
+
+        internal Command(ScrollType code, double param) {
+            Debug.Assert(code != ScrollType.SizeChange);
+
+            Code = code;
+            Param = param;
+            Size = Size.Empty;
+        }
+
+        internal Command(ScrollType code, Size size) {
+            Code = code;
+            Param = double.NaN;
+            Size = size;
+        }
+
+        public ScrollType Code { get; set; }
+
+        public double Param { get; set; }
+
+        public Size Size { get; set; }
+    }
 
     public class VisualGrid : FrameworkElement {
         private TaskScheduler ui;
-        private BlockingCollection<Func<Task>> _visualRefreshActions;
+        private BlockingCollection<Command> _scrollCommands;
 
         private GridLineVisual _gridLine;
         private VisualCollection _visualChildren;
@@ -35,30 +77,16 @@ namespace Gabang.Controls {
             ClipToBounds = true;
 
             ui = TaskScheduler.FromCurrentSynchronizationContext();
-            _visualRefreshActions = new BlockingCollection<Func<Task>>();   // TODO: cancellation action in case of close, P2
 
-            Task.Run(() => StartVisualRefresh());
+            _scrollCommands = new BlockingCollection<Command>();
+            Task.Run(() => ScrollCommandsHandler());
         }
 
         public GridType GridType { get; set; }
 
         public IGridProvider<string> DataProvider { get; set; }
 
-        private GridPoints _gridPoints;
-        public GridPoints Points {
-            get {
-                return _gridPoints;
-            }
-            set {
-                if (_gridPoints != null) {
-                    _gridPoints.ViewportChanged -= GridPoints_ViewportChanged;
-                }
-                _gridPoints = value;
-                if (_gridPoints != null) {
-                    _gridPoints.ViewportChanged += GridPoints_ViewportChanged;
-                }
-            }
-        }
+        public GridPoints Points { get; set; }
 
         #region Font
 
@@ -120,16 +148,16 @@ namespace Gabang.Controls {
             }
         }
 
-        private GridRange ComputeDataViewport() {
-            int columnStart = Points.xIndex(HorizontalOffset);
-            int rowStart = Points.yIndex(VerticalOffset);
+        private GridRange ComputeDataViewport(Rect visualViewport) {
+            int columnStart = Points.xIndex(visualViewport.X);
+            int rowStart = Points.yIndex(visualViewport.Y);
 
             double width = 0.0;
             int columnCount = 0;
             for (int c = columnStart; c < ColumnCount; c++) {
                 width += Points.GetWidth(c);
                 columnCount++;
-                if (width >= RenderSize.Width) {    // TODO: DoubleUtil
+                if (width >= visualViewport.Width) {    // TODO: DoubleUtil
                     break;
                 }
             }
@@ -141,7 +169,7 @@ namespace Gabang.Controls {
             for (int r = rowStart; r < RowCount; r++) {
                 height += Points.GetHeight(r);
                 rowCount++;
-                if (height >= RenderSize.Height) {    // TODO: DoubleUtil
+                if (height >= visualViewport.Height) {    // TODO: DoubleUtil
                     break;
                 }
             }
@@ -152,18 +180,31 @@ namespace Gabang.Controls {
                 new Range(columnStart, columnCount));
         }
 
-        private void RefreshVisuals() {
-            if (_visualRefreshActions.Count > 0) return;
-            _visualRefreshActions.Add(RefreshVisualsInternalAsync);
-        }
+        private async void ScrollCommandsHandler() {
+            List<Command> batch = new List<Command>();
 
-        private async void StartVisualRefresh() {
-            foreach (var action in _visualRefreshActions.GetConsumingEnumerable()) {
+            foreach (var command in _scrollCommands.GetConsumingEnumerable()) {
                 try {
-                    await action();
-
+                    batch.Add(command);
+                    if (_scrollCommands.Count > 0) {
+                        // another command has been queued already. continue to next
+                        continue;
+                    } else {
+                        for (int i = 0; i < batch.Count; i++) {
+                            if (i < (batch.Count - 1)
+                                && ((batch[i].Code == ScrollType.SizeChange && batch[i + 1].Code == ScrollType.SizeChange)
+                                    || (batch[i].Code == ScrollType.SetHorizontalOffset && batch[i + 1].Code == ScrollType.SetHorizontalOffset)
+                                    || (batch[i].Code == ScrollType.SetVerticalOffset && batch[i + 1].Code == ScrollType.SetVerticalOffset))) {
+                                continue;
+                            } else {
+                                await ExecuteCommand(batch[i]);
+                            }
+                        }
+                        batch.Clear();
+                    }
                 } catch (Exception ex) {
                     Trace.WriteLine(ex.Message);    // TODO: handle exception
+                    batch.Clear();
                 }
             }
         }
@@ -233,19 +274,24 @@ namespace Gabang.Controls {
             return Points.yPosition(visual.Row);
         }
 
-        private async Task RefreshVisualsInternalAsync() {
+        private async Task RefreshVisualsInternalAsync(Rect visualViewport) {
             using (var elapsed = new Elapsed("RefreshVisuals:")) {
                 Debug.Assert(TaskUtilities.IsOnBackgroundThread());
 
-                GridRange newViewport = ComputeDataViewport();
+                GridRange newViewport = ComputeDataViewport(visualViewport);
 
+                // TODO: offset may change although data viewports are same
                 if (newViewport.Equals(_dataViewport)) {
                     return;
                 }
 
                 var data = await DataProvider.GetRangeAsync(newViewport);
 
-                await Task.Factory.StartNew(() => SetVisuals(newViewport, data), CancellationToken.None, TaskCreationOptions.None, ui);
+                await Task.Factory.StartNew(
+                    () => SetVisuals(newViewport, data),
+                    CancellationToken.None,
+                    TaskCreationOptions.None,
+                    ui);
             }
         }
 
@@ -257,6 +303,8 @@ namespace Gabang.Controls {
 
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo) {
             base.OnRenderSizeChanged(sizeInfo);
+
+            EnqueueCommand(ScrollType.SizeChange, sizeInfo.NewSize);
         }
 
         protected override Size MeasureOverride(Size availableSize) {
@@ -286,15 +334,183 @@ namespace Gabang.Controls {
             return _visualChildren[index - 1];
         }
 
-        private void GridPoints_ViewportChanged(object sender, ViewportChangedEventArgs e) {
-            if (GridType == GridType.ColumnHeader && RowCount > 0) {
-                Height = _gridPoints.GetHeight(0);
-            } else if (GridType == GridType.RowHeader && ColumnCount > 0) {
-                Width = _gridPoints.GetWidth(0);
+        #region Command Queue
+
+        private CommandQueue _queue = new CommandQueue();
+
+        
+
+        
+
+        // implements ring buffer of commands
+        private struct CommandQueue {
+            private const int _capacity = 32;
+
+            //returns false if capacity is used up and entry ignored
+            internal void Enqueue(Command command) {
+                if (_lastWritePosition == _lastReadPosition) //buffer is empty
+                {
+                    _array = new Command[_capacity];
+                    _lastWritePosition = _lastReadPosition = 0;
+                }
+
+                if (!OptimizeCommand(command)) //regular insertion, if optimization didn't happen
+                {
+                    _lastWritePosition = (_lastWritePosition + 1) % _capacity;
+
+                    if (_lastWritePosition == _lastReadPosition) //buffer is full
+                    {
+                        // throw away the oldest entry and continue to accumulate fresh input
+                        _lastReadPosition = (_lastReadPosition + 1) % _capacity;
+                    }
+
+                    _array[_lastWritePosition] = command;
+                }
             }
 
-            RefreshVisuals();
+            // this tries to "merge" the incoming command with the accumulated queue
+            // for example, if we get SetHorizontalOffset incoming, all "horizontal"
+            // commands in the queue get removed and replaced with incoming one,
+            // since horizontal position is going to end up at the specified offset anyways.
+            private bool OptimizeCommand(Command command) {
+                if (_lastWritePosition != _lastReadPosition) //buffer has something
+                {
+
+                    if ((command.Code == ScrollType.SetHorizontalOffset
+                           && _array[_lastWritePosition].Code == ScrollType.SetHorizontalOffset)
+                       || (command.Code == ScrollType.SetVerticalOffset
+                           && _array[_lastWritePosition].Code == ScrollType.SetVerticalOffset)) {
+                        //if the last command was "set offset" or "make visible", simply replace it and
+                        //don't insert new command
+                        _array[_lastWritePosition].Param = command.Param;
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            // returns Invalid command if there is no more commands
+            internal Command Fetch() {
+                if (_lastWritePosition == _lastReadPosition) //buffer is empty
+                {
+                    return new Command(ScrollType.Invalid, 0);
+                }
+                _lastReadPosition = (_lastReadPosition + 1) % _capacity;
+
+                //array exists always if writePos != readPos
+                Command command = _array[_lastReadPosition];
+                _array[_lastReadPosition].Param = 0; //to release the allocated object
+
+                if (_lastWritePosition == _lastReadPosition) //it was the last command
+                {
+                    _array = null; // make GC work. Hopefully the whole queue is processed in Gen0
+                }
+                return command;
+            }
+
+            internal bool IsEmpty() {
+                return (_lastWritePosition == _lastReadPosition);
+            }
+
+            private int _lastWritePosition;
+            private int _lastReadPosition;
+            private Command[] _array;
         }
+
+        //returns true if there was a command sent to ISI
+        private async Task ExecuteCommand(Command cmd) {
+            switch (cmd.Code) {
+                case ScrollType.LineUp:
+                    await LineUpAsync();
+                    break;
+                case ScrollType.LineDown:
+                    await LineDownAsync();
+                    break;
+                case ScrollType.LineLeft: LineLeft(); break;
+                case ScrollType.LineRight: LineRight(); break;
+
+                case ScrollType.PageUp:
+                    await PageUpAsync();
+                    break;
+                case ScrollType.PageDown:
+                    await PageDownAsync();
+                    break;
+                case ScrollType.PageLeft: PageLeft(); break;
+                case ScrollType.PageRight: PageRight(); break;
+
+                case ScrollType.SetHorizontalOffset:
+                    await SetHorizontalOffsetAsync(cmd.Param);
+                    break;
+                case ScrollType.SetVerticalOffset:
+                    await SetVerticalOffsetAsync(cmd.Param);
+                    break;
+                case ScrollType.MouseWheel: SetMouseWheel(cmd.Param); break;
+
+                case ScrollType.SizeChange: {
+                        await RefreshVisualsInternalAsync(new Rect(HorizontalOffset, VerticalOffset, RenderSize.Width, RenderSize.Height));
+                        break;
+                    }
+                case ScrollType.Invalid:
+                    break;
+            }
+        }
+
+        internal void EnqueueCommand(ScrollType code, double param) {
+            _scrollCommands.Add(new Command(code, param));
+        }
+
+        internal void EnqueueCommand(ScrollType code, Size size) {
+            _scrollCommands.Add(new Command(code, size));
+        }
+
+        private async Task SetVerticalOffsetAsync(double offset) {
+            Points.VerticalOffset = offset;
+
+            await RefreshVisualsInternalAsync(new Rect(HorizontalOffset, VerticalOffset, RenderSize.Width, RenderSize.Height));
+        }
+
+        private Task LineUpAsync() {
+            return SetVerticalOffsetAsync(Points.VerticalOffset - 10.0);    // TODO: do not hard-code the number here.
+        }
+
+        private Task LineDownAsync() {
+            return SetVerticalOffsetAsync(Points.VerticalOffset + 10.0);    // TODO: do not hard-code the number here.
+        }
+
+        private Task PageUpAsync() {
+            return SetVerticalOffsetAsync(Points.VerticalOffset - 100.0);    // TODO: do not hard-code the number here.
+        }
+
+        private Task PageDownAsync() {
+            return SetVerticalOffsetAsync(Points.VerticalOffset + 100.0);    // TODO: do not hard-code the number here.
+        }
+
+        private async Task SetHorizontalOffsetAsync(double offset) {
+            Points.HorizontalOffset = offset;
+
+            await RefreshVisualsInternalAsync(new Rect(HorizontalOffset, VerticalOffset, RenderSize.Width, RenderSize.Height));
+        }
+
+        private void LineRight() {
+            throw new NotImplementedException();
+        }
+
+        private void LineLeft() {
+            throw new NotImplementedException();
+        }
+
+        private void PageRight() {
+            throw new NotImplementedException();
+        }
+
+        private void PageLeft() {
+            throw new NotImplementedException();
+        }
+
+        private void SetMouseWheel(double delta) {
+            throw new NotImplementedException();
+        }
+        #endregion
 
         class Elapsed : IDisposable {
             Stopwatch _watch;

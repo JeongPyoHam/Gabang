@@ -16,7 +16,6 @@ using System.Windows.Shapes;
 
 namespace Gabang.Controls {
     public partial class MatrixView : UserControl {
-
         private GridPoints _gridPoints;
 
         public MatrixView() {
@@ -67,13 +66,11 @@ namespace Gabang.Controls {
 
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo) {
             base.OnRenderSizeChanged(sizeInfo);
-
-            _gridPoints.OnViewportChanged(ViewportChangeType.SizeChange);
         }
 
         protected override void OnMouseWheel(MouseWheelEventArgs e) {
             if (e.Delta > 0 || e.Delta < 0) {
-                _gridPoints.VerticalOffset += (e.Delta > 0 ? -20 : 20); // TODO: make increment configurable
+                Data.EnqueueCommand(ScrollType.MouseWheel, e.Delta);
                 e.Handled = true;
             }
 
@@ -99,11 +96,71 @@ namespace Gabang.Controls {
         }
 
         private void VerticalScrollBar_Scroll(object sender, ScrollEventArgs e) {
-            _gridPoints.VerticalOffset = e.NewValue;
+            switch (e.ScrollEventType) {
+                case ScrollEventType.EndScroll:
+                    Data.EnqueueCommand(ScrollType.SetVerticalOffset, e.NewValue);
+                    break;
+                case ScrollEventType.First:
+                    Data.EnqueueCommand(ScrollType.SetVerticalOffset, e.NewValue);
+                    break;
+                case ScrollEventType.LargeDecrement:
+                    Data.EnqueueCommand(ScrollType.PageUp, e.NewValue);
+                    break;
+                case ScrollEventType.LargeIncrement:
+                    Data.EnqueueCommand(ScrollType.PageDown, e.NewValue);
+                    break;
+                case ScrollEventType.Last:
+                    Data.EnqueueCommand(ScrollType.SetVerticalOffset, e.NewValue);
+                    break;
+                case ScrollEventType.SmallDecrement:
+                    Data.EnqueueCommand(ScrollType.LineUp, e.NewValue);
+                    break;
+                case ScrollEventType.SmallIncrement:
+                    Data.EnqueueCommand(ScrollType.LineDown, e.NewValue);
+                    break;
+                case ScrollEventType.ThumbPosition:
+                    Data.EnqueueCommand(ScrollType.SetVerticalOffset, e.NewValue);
+                    break;
+                case ScrollEventType.ThumbTrack:
+                    Data.EnqueueCommand(ScrollType.SetVerticalOffset, e.NewValue);
+                    break;
+                default:
+                    break;
+            }
         }
 
         private void HorizontalScrollBar_Scroll(object sender, ScrollEventArgs e) {
-            _gridPoints.HorizontalOffset = e.NewValue;
+            switch (e.ScrollEventType) {
+                case ScrollEventType.EndScroll:
+                    Data.EnqueueCommand(ScrollType.SetHorizontalOffset, e.NewValue);
+                    break;
+                case ScrollEventType.First:
+                    Data.EnqueueCommand(ScrollType.SetHorizontalOffset, e.NewValue);
+                    break;
+                case ScrollEventType.LargeDecrement:
+                    Data.EnqueueCommand(ScrollType.PageLeft, e.NewValue);
+                    break;
+                case ScrollEventType.LargeIncrement:
+                    Data.EnqueueCommand(ScrollType.PageRight, e.NewValue);
+                    break;
+                case ScrollEventType.Last:
+                    Data.EnqueueCommand(ScrollType.SetHorizontalOffset, e.NewValue);
+                    break;
+                case ScrollEventType.SmallDecrement:
+                    Data.EnqueueCommand(ScrollType.LineLeft, e.NewValue);
+                    break;
+                case ScrollEventType.SmallIncrement:
+                    Data.EnqueueCommand(ScrollType.LineRight, e.NewValue);
+                    break;
+                case ScrollEventType.ThumbPosition:
+                    Data.EnqueueCommand(ScrollType.SetHorizontalOffset, e.NewValue);
+                    break;
+                case ScrollEventType.ThumbTrack:
+                    Data.EnqueueCommand(ScrollType.SetHorizontalOffset, e.NewValue);
+                    break;
+                default:
+                    break;
+            }
         }
     }
 }
