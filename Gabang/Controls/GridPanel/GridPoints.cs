@@ -208,5 +208,35 @@ namespace Gabang.Controls {
             }
             _xPositionValid = true;
         }
+
+        public GridRange ComputeDataViewport(Rect visualViewport) {
+            int columnStart = xIndex(visualViewport.X);
+            int rowStart = yIndex(visualViewport.Y);
+
+            double width = 0.0;
+            int columnCount = 0;
+            for (int c = columnStart; c < ColumnCount; c++) {
+                width += GetWidth(c);
+                columnCount++;
+                if (width >= visualViewport.Width) {    // TODO: DoubleUtil
+                    break;
+                }
+            }
+
+            double height = 0.0;
+            int rowEnd = rowStart;
+            int rowCount = 0;
+            for (int r = rowStart; r < RowCount; r++) {
+                height += GetHeight(r);
+                rowCount++;
+                if (height >= visualViewport.Height) {    // TODO: DoubleUtil
+                    break;
+                }
+            }
+
+            return new GridRange(
+                new Range(rowStart, rowCount),
+                new Range(columnStart, columnCount));
+        }
     }
 }

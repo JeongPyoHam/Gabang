@@ -17,12 +17,17 @@ using System.Windows.Shapes;
 namespace Gabang.Controls {
     public partial class MatrixView : UserControl {
         private GridPoints _gridPoints;
+        private VisualGridScroller _scroller;
 
         public MatrixView() {
             InitializeComponent();
         }
 
-        private void Initialize() {
+        public void Initialize(IGridProvider<string> dataProvider) {
+            _scroller = new VisualGridScroller();
+
+            DataProvider = dataProvider;
+
             _gridPoints = new GridPoints(RowCount, ColumnCount);
 
             RowHeader.RowCount = RowCount;
@@ -39,6 +44,12 @@ namespace Gabang.Controls {
             Data.ColumnCount = ColumnCount;
             Data.Points = _gridPoints;
             Data.DataProvider = DataProvider;
+
+            _scroller.Points = _gridPoints;
+            _scroller.ColumnHeader = ColumnHeader;
+            _scroller.RowHeader = RowHeader;
+            _scroller.DataGrid = Data;
+            _scroller.DataProvider = DataProvider;
         }
 
         private IGridProvider<string> _dataProvider;
@@ -48,7 +59,6 @@ namespace Gabang.Controls {
             }
             set {
                 _dataProvider = value;
-                Initialize();
             }
         }
 
@@ -66,11 +76,13 @@ namespace Gabang.Controls {
 
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo) {
             base.OnRenderSizeChanged(sizeInfo);
+
+            _scroller.EnqueueCommand(ScrollType.SizeChange, Data.RenderSize);
         }
 
         protected override void OnMouseWheel(MouseWheelEventArgs e) {
             if (e.Delta > 0 || e.Delta < 0) {
-                Data.EnqueueCommand(ScrollType.MouseWheel, e.Delta);
+                _scroller.EnqueueCommand(ScrollType.MouseWheel, e.Delta);
                 e.Handled = true;
             }
 
@@ -98,31 +110,31 @@ namespace Gabang.Controls {
         private void VerticalScrollBar_Scroll(object sender, ScrollEventArgs e) {
             switch (e.ScrollEventType) {
                 case ScrollEventType.EndScroll:
-                    Data.EnqueueCommand(ScrollType.SetVerticalOffset, e.NewValue);
+                    _scroller.EnqueueCommand(ScrollType.SetVerticalOffset, e.NewValue);
                     break;
                 case ScrollEventType.First:
-                    Data.EnqueueCommand(ScrollType.SetVerticalOffset, e.NewValue);
+                    _scroller.EnqueueCommand(ScrollType.SetVerticalOffset, e.NewValue);
                     break;
                 case ScrollEventType.LargeDecrement:
-                    Data.EnqueueCommand(ScrollType.PageUp, e.NewValue);
+                    _scroller.EnqueueCommand(ScrollType.PageUp, e.NewValue);
                     break;
                 case ScrollEventType.LargeIncrement:
-                    Data.EnqueueCommand(ScrollType.PageDown, e.NewValue);
+                    _scroller.EnqueueCommand(ScrollType.PageDown, e.NewValue);
                     break;
                 case ScrollEventType.Last:
-                    Data.EnqueueCommand(ScrollType.SetVerticalOffset, e.NewValue);
+                    _scroller.EnqueueCommand(ScrollType.SetVerticalOffset, e.NewValue);
                     break;
                 case ScrollEventType.SmallDecrement:
-                    Data.EnqueueCommand(ScrollType.LineUp, e.NewValue);
+                    _scroller.EnqueueCommand(ScrollType.LineUp, e.NewValue);
                     break;
                 case ScrollEventType.SmallIncrement:
-                    Data.EnqueueCommand(ScrollType.LineDown, e.NewValue);
+                    _scroller.EnqueueCommand(ScrollType.LineDown, e.NewValue);
                     break;
                 case ScrollEventType.ThumbPosition:
-                    Data.EnqueueCommand(ScrollType.SetVerticalOffset, e.NewValue);
+                    _scroller.EnqueueCommand(ScrollType.SetVerticalOffset, e.NewValue);
                     break;
                 case ScrollEventType.ThumbTrack:
-                    Data.EnqueueCommand(ScrollType.SetVerticalOffset, e.NewValue);
+                    _scroller.EnqueueCommand(ScrollType.SetVerticalOffset, e.NewValue);
                     break;
                 default:
                     break;
@@ -132,31 +144,31 @@ namespace Gabang.Controls {
         private void HorizontalScrollBar_Scroll(object sender, ScrollEventArgs e) {
             switch (e.ScrollEventType) {
                 case ScrollEventType.EndScroll:
-                    Data.EnqueueCommand(ScrollType.SetHorizontalOffset, e.NewValue);
+                    _scroller.EnqueueCommand(ScrollType.SetHorizontalOffset, e.NewValue);
                     break;
                 case ScrollEventType.First:
-                    Data.EnqueueCommand(ScrollType.SetHorizontalOffset, e.NewValue);
+                    _scroller.EnqueueCommand(ScrollType.SetHorizontalOffset, e.NewValue);
                     break;
                 case ScrollEventType.LargeDecrement:
-                    Data.EnqueueCommand(ScrollType.PageLeft, e.NewValue);
+                    _scroller.EnqueueCommand(ScrollType.PageLeft, e.NewValue);
                     break;
                 case ScrollEventType.LargeIncrement:
-                    Data.EnqueueCommand(ScrollType.PageRight, e.NewValue);
+                    _scroller.EnqueueCommand(ScrollType.PageRight, e.NewValue);
                     break;
                 case ScrollEventType.Last:
-                    Data.EnqueueCommand(ScrollType.SetHorizontalOffset, e.NewValue);
+                    _scroller.EnqueueCommand(ScrollType.SetHorizontalOffset, e.NewValue);
                     break;
                 case ScrollEventType.SmallDecrement:
-                    Data.EnqueueCommand(ScrollType.LineLeft, e.NewValue);
+                    _scroller.EnqueueCommand(ScrollType.LineLeft, e.NewValue);
                     break;
                 case ScrollEventType.SmallIncrement:
-                    Data.EnqueueCommand(ScrollType.LineRight, e.NewValue);
+                    _scroller.EnqueueCommand(ScrollType.LineRight, e.NewValue);
                     break;
                 case ScrollEventType.ThumbPosition:
-                    Data.EnqueueCommand(ScrollType.SetHorizontalOffset, e.NewValue);
+                    _scroller.EnqueueCommand(ScrollType.SetHorizontalOffset, e.NewValue);
                     break;
                 case ScrollEventType.ThumbTrack:
-                    Data.EnqueueCommand(ScrollType.SetHorizontalOffset, e.NewValue);
+                    _scroller.EnqueueCommand(ScrollType.SetHorizontalOffset, e.NewValue);
                     break;
                 default:
                     break;

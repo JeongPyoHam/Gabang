@@ -22,7 +22,7 @@ namespace Gabang.TreeGridTest {
         public GridPanelWindow() {
             InitializeComponent();
 
-            RootGrid.DataProvider = new DataProvider(50, 60);
+            RootGrid.Initialize(new DataProvider(1000, 1000));
         }
 
         Stopwatch _stopWatch;
@@ -65,6 +65,26 @@ namespace Gabang.TreeGridTest {
         }
     }
 
+    class MockGridData : IGridData<string> {
+        public MockGridData(GridRange range) {
+            ColumnHeader = new List<string>();
+            for (int i = 0; i < range.Columns.Count; i++) {
+                ColumnHeader.Add(string.Format("[{0},]", range.Columns.Start + i));
+            }
+            RowHeader = new List<string>();
+            for (int i = 0; i < range.Rows.Count; i++) {
+                RowHeader.Add(string.Format("[,{0}]", range.Rows.Start + i));
+            }
+            Grid = new Grid<string>(range, (r, c) => string.Format("{0}:{1}", r, c));
+        }
+
+        public IList<string> ColumnHeader { get; private set; }
+
+        public IGrid<string> Grid { get; private set; }
+
+        public IList<string> RowHeader { get; private set; }
+    }
+
     class DataProvider : IGridProvider<string> {
         public DataProvider(int rowCount, int columnCount) {
             RowCount = rowCount;
@@ -74,6 +94,13 @@ namespace Gabang.TreeGridTest {
         public int ColumnCount { get; }
 
         public int RowCount { get; }
+
+        public Task<IGridData<string>> GetAsync(GridRange range) {
+            return Task.Run(async () => {
+                await Task.Delay(TimeSpan.FromMilliseconds(500));
+                return (IGridData<string>)new MockGridData(range);
+            });
+        }
 
         public Task<IGrid<string>> GetRangeAsync(GridRange gridRange) {
             return Task.Run(async () => {

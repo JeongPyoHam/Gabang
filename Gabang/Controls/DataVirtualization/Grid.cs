@@ -28,6 +28,15 @@ namespace Gabang.Controls {
             }
         }
 
+        public Grid(GridRange range, IList<T> list) {
+            _rowStart = range.Rows.Start;
+            _columnStart = range.Columns.Start;
+            RowCount = range.Rows.Count;
+            ColumnCount = range.Columns.Count;
+
+            _list = list;
+        }
+
         public Grid(int rowCount, int columnCount, Func<int, int, T> createNew) {
             RowCount = rowCount;
             ColumnCount = columnCount;

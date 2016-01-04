@@ -72,6 +72,10 @@ namespace Gabang.Controls {
 
         public int RowCount { get; }
 
+        public Task<IGridData<GridItem>> GetAsync(GridRange range) {
+            throw new NotImplementedException();
+        }
+
         public Task<IGrid<GridItem>> GetRangeAsync(GridRange gridRange) {
             return Task.Run(async () => {
                 await Task.Delay(1000);

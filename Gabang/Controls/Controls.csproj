@@ -67,6 +67,7 @@
     <Compile Include="DataVirtualization\PageNumber.cs" />
     <Compile Include="DataVirtualization\DelegateList.cs" />
     <Compile Include="DataInspect\DynamicGridCellData.cs" />
+    <Compile Include="GridPanel\Elapsed.cs" />
     <Compile Include="GridPanel\GridParser.cs" />
     <Compile Include="GridPanel\MatrixView.xaml.cs">
       <DependentUpon>MatrixView.xaml</DependentUpon>
@@ -75,6 +76,7 @@
     <Compile Include="GridPanel\VisualGrid.cs" />
     <Compile Include="GridPanel\GridPoints.cs" />
     <Compile Include="GridPanel\TextVisual.cs" />
+    <Compile Include="GridPanel\VisualGridScroller.cs" />
     <Compile Include="SynchronizedStackPanel.cs" />
     <Compile Include="Data\GridByList.cs" />
     <Compile Include="Data\GridByDictionary.cs" />
