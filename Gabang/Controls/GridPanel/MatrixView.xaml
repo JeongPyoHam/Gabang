@@ -29,7 +29,9 @@
         <!-- Row 1 -->
         <local:VisualGrid x:Name="RowHeader" GridType="RowHeader"
                             Grid.Row="1" Grid.Column="0" />
-        <local:VisualGrid x:Name="Data"
+        <!--<local:VisualGrid x:Name="Data"
+                        Grid.Row="1" Grid.Column="1" />-->
+        <local:GridPanel x:Name="Data"
                         Grid.Row="1" Grid.Column="1" />
         <ScrollBar x:Name="VerticalScrollBar" Orientation="Vertical"
                    Grid.Row="1" Grid.Column="2"

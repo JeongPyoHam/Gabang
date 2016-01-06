@@ -1,0 +1,24 @@
+﻿<Window x:Class="Gabang.TreeGridTest.GridPanel2Window"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Gabang.TreeGridTest"
+        xmlns:control="clr-namespace:Gabang.Controls;assembly=Gabang.Controls"
+        mc:Ignorable="d"
+        Title="GridPanel2Window" Height="300" Width="300">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal">
+            <Button x:Name="Refresh" Content="Refresh" Click="Refresh_Click" />
+            <Button x:Name="Experiment" Content="Experiment" Click="Experiment_Click" />
+            <Button x:Name="Experiment2" Content="Transform" Click="Transform_Click" />
+        </StackPanel>
+        <control:MatrixView2 x:Name="RootGrid"
+                             Grid.Row="1"/>
+    </Grid>
+</Window>

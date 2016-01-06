@@ -24,7 +24,8 @@ namespace Gabang.Controls {
         public GridPoints Points { get; set; }
         public VisualGrid ColumnHeader { get; set; }
         public VisualGrid RowHeader { get; set; }
-        public VisualGrid DataGrid { get; set; }
+        //public VisualGrid DataGrid { get; set; }
+        public GridPanel DataGrid { get; set; }
         public IGridProvider<string> DataProvider { get; set; }
 
         internal void EnqueueCommand(ScrollType code, double param) {
@@ -114,7 +115,6 @@ namespace Gabang.Controls {
                 GridRange newViewport = Points.ComputeDataViewport(visualViewport);
 
                 var data = await DataProvider.GetAsync(newViewport);
-                //var data = await DataProvider.GetRangeAsync(newViewport);
 
                 await Task.Factory.StartNew(
                     () => DrawVisuals(newViewport, data),

@@ -97,7 +97,7 @@ namespace Gabang.TreeGridTest {
 
         public Task<IGridData<string>> GetAsync(GridRange range) {
             return Task.Run(async () => {
-                await Task.Delay(TimeSpan.FromMilliseconds(500));
+                await Task.Delay(TimeSpan.FromMilliseconds(1));
                 return (IGridData<string>)new MockGridData(range);
             });
         }
